@@ -206,15 +206,17 @@ position:absolute;pointer-events:none;display:none}
 position:absolute;top:35px;left:35px;pointer-events:none}
 
 /* THROTTLE SLIDER */
-/* Twin Levers (zero-turn style) — on outer edges */
-.twin-levers{position:absolute;top:0;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0;z-index:20;pointer-events:none}
-.lever-zone{width:70px;height:240px;display:flex;flex-direction:column;align-items:center;pointer-events:auto;touch-action:none;
-background:rgba(0,0,0,.25);border-radius:0 14px 14px 0;backdrop-filter:blur(4px);padding:10px 8px}
-.lever-zone.lever-right{border-radius:14px 0 0 14px}
-.lever-track{width:12px;height:180px;border-radius:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);position:relative;flex-shrink:0}
-.lever-handle{width:48px;height:24px;border-radius:8px;background:rgba(255,255,255,.8);position:absolute;left:50%;transform:translateX(-50%);top:50%;margin-top:-12px;
-box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.lever-label{color:rgba(255,255,255,.8);font-size:.7rem;font-weight:700;margin-top:8px;text-transform:uppercase}
+/* Twin Levers — hidden, replaced by thumb toggle */
+.twin-levers{display:none!important}
+
+/* Thumb toggle — tap & drag anywhere on screen to steer */
+.thumb-toggle-area{position:absolute;top:0;left:0;right:0;bottom:0;z-index:15;touch-action:none}
+.thumb-indicator{position:absolute;width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,255,255,.4);
+background:rgba(255,255,255,.08);display:none;pointer-events:none;z-index:16;transform:translate(-50%,-50%)}
+.thumb-indicator::after{content:'';position:absolute;top:50%;left:50%;width:20px;height:20px;
+border-radius:50%;background:rgba(255,255,255,.5);transform:translate(-50%,-50%)}
+.thumb-direction{position:absolute;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;
+border-bottom:20px solid rgba(255,255,255,.6);display:none;pointer-events:none;z-index:17;transform-origin:center bottom}
 .throttle-area{position:absolute;bottom:80px;right:16px;width:44px;height:180px;z-index:20;touch-action:none;
 display:flex;flex-direction:column;align-items:center}
 .throttle-track{width:8px;height:140px;border-radius:4px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
@@ -354,17 +356,9 @@ justify-content:center;align-items:center;z-index:25;color:#fff;text-align:cente
 <div class="joystick-touch-area" id="joystick-touch-area">
 <div class="dyn-joystick-base" id="dyn-joystick-base"><div class="dyn-joystick-knob" id="dyn-joystick-knob"></div></div>
 </div>
-<!-- Twin Levers for standard zero-turns -->
-<div class="twin-levers" id="twin-levers" style="display:none">
-<div class="lever-zone lever-left" id="lever-left">
-<div class="lever-track"><div class="lever-handle" id="lever-handle-L"></div></div>
-<div class="lever-label">L</div>
-</div>
-<div class="lever-zone lever-right" id="lever-right">
-<div class="lever-track"><div class="lever-handle" id="lever-handle-R"></div></div>
-<div class="lever-label">R</div>
-</div>
-</div>
+<!-- Thumb toggle — tap and hold to steer mower toward your thumb -->
+<div class="thumb-toggle-area" id="thumb-toggle-area"></div>
+<div class="thumb-indicator" id="thumb-indicator"></div>
 <div class="throttle-area" id="throttle-area">
 <div class="throttle-track" id="throttle-track">
 <div class="throttle-fill" id="throttle-fill" style="height:50%"></div>
@@ -1184,12 +1178,16 @@ let throttleValue = 0.5; // 0-1
 let throttleTouchId = null;
 let keysDown = {};
 let breakdownTimer = null;
-// Twin lever system
-let leverLeftValue = 0; // -1 to 1 (center=0=neutral, up=forward, down=reverse)
+// Twin lever system (legacy, kept for state compat)
+let leverLeftValue = 0;
 let leverRightValue = 0;
 let leverLeftTouchId = null;
 let leverRightTouchId = null;
-let controlMode = 'joystick'; // 'joystick' (Country Clipper) or 'levers' (standard zero-turn)
+let controlMode = 'thumb'; // 'joystick' (Country Clipper) or 'thumb' (standard zero-turn)
+// Thumb toggle
+let thumbActive = false;
+let thumbDX = 0, thumbDY = 0;
+let thumbTouchId = null;
 
 function startMowing(contractId){
 const c = G.contracts.find(c2=>String(c2.id)===String(contractId));
@@ -1209,17 +1207,15 @@ const screen = $('mowing-screen');
 showScreen('mowing-screen');
 $('bottom-nav').style.display='none';
 
-// Control mode based on mower — Country Clipper gets single joystick (easier!), others get twin levers
+// Control mode: Country Clipper = joystick (even easier), others = thumb toggle
 const isClipper = bestFunctional.id && bestFunctional.id.includes('clipper');
-controlMode = isClipper ? 'joystick' : 'levers';
+controlMode = isClipper ? 'joystick' : 'thumb';
 // Show/hide controls
 $('joystick-touch-area').style.display = controlMode === 'joystick' ? 'block' : 'none';
-$('twin-levers').style.display = controlMode === 'levers' ? 'flex' : 'none';
-// Reset levers
-leverLeftValue = 0; leverRightValue = 0;
-leverLeftTouchId = null; leverRightTouchId = null;
-// Hide throttle slider in lever mode (levers control speed)
-$('throttle-area').style.display = controlMode === 'levers' ? 'none' : 'block';
+$('thumb-toggle-area').style.display = controlMode === 'thumb' ? 'block' : 'none';
+$('throttle-area').style.display = controlMode === 'joystick' ? 'block' : 'none';
+// Reset thumb state
+thumbActive = false; thumbDX = 0; thumbDY = 0;
 
 // Size canvas to full screen (accounting for safe areas on iPhone)
 const w = screen.clientWidth || window.innerWidth;
@@ -1332,7 +1328,7 @@ fill.style.width = h + '%';
 fill.style.background = h > 50 ? 'var(--success)' : h > 25 ? 'var(--warning)' : 'var(--danger)';
 text.textContent = Math.round(h) + '%';
 const speedPct = Math.round(throttleValue * 100);
-const ctrlLabel = controlMode === 'levers' ? '🎚️ Twin Levers' : '🕹️ Joystick';
+const ctrlLabel = controlMode === 'thumb' ? '👆 Touch to steer' : '🕹️ Joystick';
 $('hud-speed').innerHTML = `&#9881; ${speedPct}% | ${ctrlLabel}${keysDown['Shift']?' BOOST':''}`;
 }
 
@@ -1388,34 +1384,16 @@ ms.mowerWidth = ms.baseMowerWidth + widthBonus;
 // Drift at high speed
 const driftAmount = throttleValue > 0.7 ? (throttleValue - 0.7) * 0.15 : 0;
 
-// Move mower — twin levers (standard zero-turn) or joystick (Country Clipper)
+// Move mower — thumb toggle (standard) or joystick (Country Clipper)
 let dx = 0, dy = 0;
-if(controlMode === 'levers'){
-// Keyboard: Q/E for left lever, Z/C or arrow keys for control
-if(keysDown['q']||keysDown['Q']) leverLeftValue = Math.min(1, leverLeftValue + 0.06);
-if(keysDown['e']||keysDown['E']) leverRightValue = Math.min(1, leverRightValue + 0.06);
-if(keysDown['z']||keysDown['Z']) leverLeftValue = Math.max(-1, leverLeftValue - 0.06);
-if(keysDown['c']||keysDown['C']) leverRightValue = Math.max(-1, leverRightValue - 0.06);
-// WASD as shortcut
-if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']){leverLeftValue=Math.min(1,leverLeftValue+0.06);leverRightValue=Math.min(1,leverRightValue+0.06);}
-if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']){leverLeftValue=Math.max(-1,leverLeftValue-0.06);leverRightValue=Math.max(-1,leverRightValue-0.06);}
-if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']){leverLeftValue=Math.max(-1,leverLeftValue-0.04);leverRightValue=Math.min(1,leverRightValue+0.04);}
-if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']){leverLeftValue=Math.min(1,leverLeftValue+0.04);leverRightValue=Math.max(-1,leverRightValue-0.04);}
-// Decay levers back to center when no touch/key input
-const anyKey = keysDown['q']||keysDown['Q']||keysDown['z']||keysDown['Z']||
-keysDown['ArrowUp']||keysDown['w']||keysDown['W']||keysDown['ArrowDown']||keysDown['s']||keysDown['S']||
-keysDown['ArrowLeft']||keysDown['a']||keysDown['A']||keysDown['ArrowRight']||keysDown['d']||keysDown['D']||
-keysDown['e']||keysDown['E']||keysDown['c']||keysDown['C'];
-if(!anyKey && !leverLeftTouchId) leverLeftValue *= 0.88;
-if(!anyKey && !leverRightTouchId) leverRightValue *= 0.88;
-// Real zero-turn physics: rotate then move forward in facing direction
-const lev = getLeversMovement(ms.angle);
-ms.angle += lev.turnRate * 0.02; // rotate the mower
-const fwd = lev.speed; // forward/reverse magnitude
-dx = Math.cos(ms.angle) * fwd;
-dy = Math.sin(ms.angle) * fwd;
-// Auto throttle from lever intensity
-throttleValue = clamp(Math.abs(fwd), 0.1, 1);
+if(controlMode === 'thumb'){
+// Thumb toggle: mower drives toward where you're touching
+if(thumbActive){ dx = thumbDX; dy = thumbDY; }
+// Keyboard still works
+if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']) dy=-1;
+if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']) dy=1;
+if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']) dx=-1;
+if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']) dx=1;
 } else {
 // Joystick mode (Country Clipper — easier, more responsive)
 if(joystickActive){ dx = joystickDX; dy = joystickDY; }
@@ -1906,60 +1884,76 @@ updateThrottleUI();
 document.addEventListener('keydown',e=>{keysDown[e.key]=true});
 document.addEventListener('keyup',e=>{delete keysDown[e.key]});
 
-// Twin lever touch handling
-function setupLeverTouch(side){
-const el = $(side === 'L' ? 'lever-left' : 'lever-right');
-if(!el) return;
-const handle = $(side === 'L' ? 'lever-handle-L' : 'lever-handle-R');
-function updateLever(clientY){
-const rect = el.querySelector('.lever-track').getBoundingClientRect();
-const pct = clamp((rect.top + rect.height/2 - clientY) / (rect.height/2), -1, 1);
-if(side==='L') leverLeftValue = pct;
-else leverRightValue = pct;
-const topPct = 50 - pct * 45;
-handle.style.top = topPct + '%';
-handle.style.marginTop = '-10px';
-}
-el.addEventListener('touchstart', e=>{
-e.preventDefault(); e.stopPropagation();
-const t = e.changedTouches[0];
-if(side==='L') leverLeftTouchId = t.identifier;
-else leverRightTouchId = t.identifier;
-updateLever(t.clientY);
-},{passive:false});
-el.addEventListener('touchmove', e=>{
-e.preventDefault(); e.stopPropagation();
-const tid = side==='L' ? leverLeftTouchId : leverRightTouchId;
-for(let i=0;i<e.changedTouches.length;i++){
-if(e.changedTouches[i].identifier === tid) updateLever(e.changedTouches[i].clientY);
-}
-},{passive:false});
-el.addEventListener('touchend', e=>{
-e.preventDefault();
-const tid = side==='L' ? leverLeftTouchId : leverRightTouchId;
-for(let i=0;i<e.changedTouches.length;i++){
-if(e.changedTouches[i].identifier === tid){
-if(side==='L'){leverLeftTouchId=null;leverLeftValue=0;}
-else{leverRightTouchId=null;leverRightValue=0;}
-handle.style.top='50%';
-}
-}
-},{passive:false});
-}
-setupLeverTouch('L');
-setupLeverTouch('R');
+// Thumb toggle — tap anywhere on screen, mower steers toward your thumb
+(function setupThumbToggle(){
+const area = $('thumb-toggle-area');
+const indicator = $('thumb-indicator');
+if(!area) return;
 
-// Convert twin levers to rotation-based tank drive (real zero-turn physics)
-// Left lever = left wheel speed, Right lever = right wheel speed
-// Both forward = straight, one only = pivot around stationary wheel, opposite = spin in place
-function getLeversMovement(mowerAngle){
-const L = leverLeftValue;
-const R = leverRightValue;
-if(Math.abs(L) < 0.05 && Math.abs(R) < 0.05) return {speed:0, turnRate:0};
-const speed = (L + R) / 2; // forward/reverse speed
-const turnRate = (R - L) * 2.5; // rotation speed (radians-ish per frame)
-return {speed, turnRate};
+function updateThumb(clientX, clientY){
+if(!mowState) return;
+// Calculate direction from mower to thumb position
+const canvas = $('mow-canvas');
+const rect = canvas.getBoundingClientRect();
+// Convert screen coords to canvas coords
+const cx = (clientX - rect.left) / rect.width * mowState.w;
+const cy = (clientY - rect.top) / rect.height * mowState.h;
+const ddx = cx - mowState.px;
+const ddy = cy - mowState.py;
+const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+if(dist > 5){
+thumbDX = ddx / dist;
+thumbDY = ddy / dist;
+// Speed based on distance from mower (farther thumb = faster)
+throttleValue = clamp(dist / (mowState.w * 0.3), 0.15, 1);
 }
+indicator.style.display = 'block';
+indicator.style.left = clientX + 'px';
+indicator.style.top = clientY + 'px';
+}
+
+area.addEventListener('touchstart', e=>{
+if(controlMode !== 'thumb') return;
+e.preventDefault();
+const t = e.changedTouches[0];
+thumbTouchId = t.identifier;
+thumbActive = true;
+updateThumb(t.clientX, t.clientY);
+},{passive:false});
+
+area.addEventListener('touchmove', e=>{
+if(controlMode !== 'thumb') return;
+e.preventDefault();
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === thumbTouchId){
+updateThumb(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+}
+}
+},{passive:false});
+
+area.addEventListener('touchend', e=>{
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === thumbTouchId){
+thumbTouchId = null;
+thumbActive = false;
+thumbDX = 0; thumbDY = 0;
+indicator.style.display = 'none';
+}
+}
+},{passive:false});
+
+// Mouse fallback for desktop testing
+area.addEventListener('mousedown', e=>{
+if(controlMode !== 'thumb') return;
+thumbActive = true;
+updateThumb(e.clientX, e.clientY);
+const mm = e2 => updateThumb(e2.clientX, e2.clientY);
+const mu = () => { thumbActive=false; thumbDX=0; thumbDY=0; indicator.style.display='none';
+document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); };
+document.addEventListener('mousemove', mm);
+document.addEventListener('mouseup', mu);
+});
+})();
 
 // ===== ADVANCE WEEK =====
 function advanceWeek(){
