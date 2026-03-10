@@ -1573,8 +1573,12 @@ let hireHtml='';
 if(!canHire){
 hireHtml='<div style="padding:20px;text-align:center;color:var(--text-light)">Buy a truck first to support more crew members. Each employee needs a truck assigned.</div>';
 } else {
-// Generate 3 candidates
+// Generate 3 candidates — the Darrell brothers are always available first
 const candidates = [generateEmployee(), generateEmployee(), generateEmployee()];
+// Hi, I'm Darrell, and this is my other brother Darrell
+if(!G._darrellsHired){G._darrellsHired=0;}
+if(G._darrellsHired<1){candidates[0].name='Darrell H Johnson';candidates[0].level='Rookie';candidates[0].wage=18;candidates[0].skill=0.6;}
+if(G._darrellsHired<2){candidates[G._darrellsHired<1?1:0].name='Darrell G Johnson';candidates[G._darrellsHired<1?1:0].level='Rookie';candidates[G._darrellsHired<1?1:0].wage=18;candidates[G._darrellsHired<1?1:0].skill=0.6;}
 candidates.forEach(e=>{
 hireHtml+=`<div class="employee-card">
 <div class="emp-header"><div class="emp-name">${e.name}</div><span class="emp-level ${e.level.toLowerCase()}">${e.level}</span></div>
@@ -1588,6 +1592,10 @@ $('hire-list').innerHTML=hireHtml;
 
 function hireEmployee(btn){
 const e = JSON.parse(btn.dataset.emp);
+if(e.name.startsWith('Darrell') && e.name.includes('Johnson')){
+if(!G._darrellsHired) G._darrellsHired=0;
+G._darrellsHired++;
+}
 G.employees.push(e);
 saveGame();
 renderEmployees();
