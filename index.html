@@ -1602,6 +1602,10 @@ renderEmployees();
 }
 
 function fireEmployee(id){
+// Return any truck assigned to this employee
+(G.ownedTrucks||[]).forEach(t=>{
+if(t.assignedTo===String(id)) t.assignedTo=null;
+});
 G.employees = G.employees.filter(e=>String(e.id)!==String(id));
 saveGame();
 renderEmployees();
