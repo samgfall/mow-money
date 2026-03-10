@@ -344,6 +344,53 @@ display:flex;align-items:center;gap:8px;max-width:90vw}
 .xp-mini-bar{width:50px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
 .xp-mini-fill{height:100%;border-radius:3px;background:#6db85a;transition:width .3s}
 
+/* SEASONAL CONTRACTS */
+.contract-card.seasonal{border-left:4px solid #0c5460}
+.contract-card.seasonal.winter-service{border-left-color:#6da9d4}
+.contract-card.seasonal.spring-service{border-left-color:#6db85a}
+.contract-card.seasonal.fall-service{border-left-color:#cc8833}
+.seasonal-tag{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600}
+.seasonal-tag.snow{background:#d1ecf1;color:#0c5460}
+.seasonal-tag.spring-clean{background:#d4edda;color:#155724}
+.seasonal-tag.leaf{background:#fff3cd;color:#856404}
+.btn-do-job{background:#0c5460;color:#fff;padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:600;flex:1}
+
+/* COMPETITORS */
+.competitor-section{margin:0 16px 12px}
+.competitor-card{background:var(--card);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.competitor-card .comp-icon{font-size:1.5rem;width:40px;height:40px;border-radius:10px;background:#f8d7da;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.competitor-card .comp-info{flex:1}
+.competitor-card .comp-name{font-weight:700;font-size:.85rem}
+.competitor-card .comp-stats{font-size:.72rem;color:var(--text-light);margin-top:2px}
+.competitor-card .comp-threat{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:6px}
+.comp-threat.low{background:#d4edda;color:#155724}
+.comp-threat.medium{background:#fff3cd;color:#856404}
+.comp-threat.high{background:#f8d7da;color:#721c24}
+
+/* ANALYTICS */
+#analytics-screen{padding-bottom:70px}
+.analytics-chart{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 16px 10px}
+.analytics-chart h3{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:10px}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:100px;padding-top:8px}
+.bar-chart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bar-chart .bar{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .3s}
+.bar-chart .bar.positive{background:var(--green-mid)}
+.bar-chart .bar.negative{background:var(--danger)}
+.bar-chart .bar-label{font-size:.55rem;color:var(--text-light);white-space:nowrap}
+.bar-chart .bar-value{font-size:.55rem;font-weight:600}
+.pie-row{display:flex;gap:12px;align-items:center}
+.pie-row canvas{flex-shrink:0}
+.pie-legend{font-size:.72rem;display:flex;flex-direction:column;gap:4px}
+.pie-legend-item{display:flex;align-items:center;gap:6px}
+.pie-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric-item{text-align:center;padding:8px;background:var(--green-pale);border-radius:8px}
+.metric-item .metric-val{font-size:1.1rem;font-weight:700}
+.metric-item .metric-label{font-size:.65rem;color:var(--text-light);margin-top:2px}
+
+/* ROUTE PLANNER */
+.route-planner-info{margin:0 16px 8px;padding:10px 14px;background:#d1ecf1;border-radius:var(--radius);font-size:.8rem;color:#0c5460;display:flex;align-items:center;gap:8px}
+
 /* RESPONSIVE */
 @media(min-width:600px){
 .stats-grid{grid-template-columns:repeat(4,1fr)}
@@ -380,6 +427,7 @@ display:flex;align-items:center;gap:8px;max-width:90vw}
 <div class="stats-grid" id="stats-grid"></div>
 <div class="section-title">Quick Actions</div>
 <div class="action-cards" id="action-cards"></div>
+<div id="competitor-area"></div>
 <div id="loan-area"></div>
 <button class="advance-week-btn" id="advance-btn" onclick="advanceWeek()">Advance to Next Week &#9654;</button>
 </div>
@@ -426,6 +474,13 @@ display:flex;align-items:center;gap:8px;max-width:90vw}
 <div id="skills-list"></div>
 <div class="section-title">Achievements</div>
 <div class="achievement-section"><div class="achievement-grid" id="achievement-grid"></div></div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="analytics-screen" class="screen">
+<div class="top-bar"><div style="font-weight:600">Analytics</div><div class="cash" id="analytics-cash"></div></div>
+<div class="section-title">Business Performance</div>
+<div id="analytics-content"></div>
 </div>
 
 <!-- TOAST CONTAINER -->
@@ -506,6 +561,7 @@ display:flex;align-items:center;gap:8px;max-width:90vw}
 <button onclick="showScreen('employees-screen')" data-screen="employees-screen"><span class="nav-icon">&#128101;</span>Crew</button>
 <button onclick="showScreen('skills-screen')" data-screen="skills-screen"><span class="nav-icon">&#127942;</span>Skills</button>
 <button onclick="showScreen('map-screen')" data-screen="map-screen"><span class="nav-icon">&#128506;</span>Map</button>
+<button onclick="showScreen('analytics-screen')" data-screen="analytics-screen"><span class="nav-icon">&#128200;</span>Stats</button>
 </div>
 
 <script>
@@ -573,7 +629,10 @@ const ACHIEVEMENTS = [
 {id:'loyal_customer',name:'Loyal Customer',icon:'\u2764\uFE0F',desc:'Keep a customer for 10+ weeks',hint:'Retain customers',xp:60,check:g=>g.contracts.some(c=>(c.loyaltyWeeks||c.weeksActive||0)>=10)},
 {id:'storm_chaser',name:'Storm Chaser',icon:'\u26C8\uFE0F',desc:'Mow during a storm',hint:'Brave the weather',xp:40,check:null},
 {id:'debt_free',name:'Debt Free',icon:'\uD83C\uDF89',desc:'Pay off all loans',hint:'Clear your debts',xp:100,check:g=>g.mowerLoan<=0&&(g.ownedTrucks||[]).every(t=>t.loanLeft<=0)&&(g.ownedTrucks||[]).length>0},
-{id:'full_house',name:'Full House',icon:'\uD83C\uDFE0',desc:'Have 10+ contracts',hint:'Lots of jobs',xp:70,check:g=>g.contracts.length>=10}
+{id:'full_house',name:'Full House',icon:'\uD83C\uDFE0',desc:'Have 10+ contracts',hint:'Lots of jobs',xp:70,check:g=>g.contracts.length>=10},
+{id:'snow_boss',name:'Snow Boss',icon:'\u2744\uFE0F',desc:'Complete 10 snow plowing jobs',hint:'Plow lots of snow',xp:60,check:null},
+{id:'all_seasons',name:'All Seasons Pro',icon:'\uD83C\uDF0D',desc:'Complete jobs in all 4 seasons',hint:'Work year-round',xp:80,check:null},
+{id:'competitor_crusher',name:'Competitor Crusher',icon:'\uD83D\uDCAA',desc:'Reach higher reputation than all competitors',hint:'Beat the competition',xp:75,check:g=>(g.competitors||[]).every(c=>g.reputation>c.rep)}
 ];
 
 const MOWER_UPGRADES = [
@@ -582,6 +641,27 @@ const MOWER_UPGRADES = [
 {id:'allterrain_tires',name:'All-Terrain Tires',icon:'\uD83D\uDEDE',desc:'-30% obstacle damage',price:500},
 {id:'air_filter',name:'Air Filter',icon:'\uD83D\uDCA8',desc:'-15% gas cost',price:400},
 {id:'reinforced_frame',name:'Reinforced Frame',icon:'\uD83D\uDEE1\uFE0F',desc:'+25% health capacity',price:700}
+];
+
+// Seasonal service types
+const SEASONAL_SERVICES = {
+snow_plow: [
+{type:'snow_driveway',label:'Driveway Plowing',icon:'\u2744\uFE0F',minPrice:60,maxPrice:90,gasCost:12,timeCost:0.5,needsTruck:true},
+{type:'snow_lot',label:'Parking Lot Plowing',icon:'\uD83C\uDFEA',minPrice:120,maxPrice:200,gasCost:25,timeCost:1,needsTruck:true},
+{type:'snow_sidewalk',label:'Sidewalk Clearing',icon:'\uD83D\uDEB6',minPrice:40,maxPrice:70,gasCost:5,timeCost:0.3,needsTruck:false}
+],
+spring_cleanup: [
+{type:'spring_debris',label:'Debris Removal',icon:'\uD83C\uDF3F',minPrice:80,maxPrice:120,gasCost:10,timeCost:1},
+{type:'spring_mulch',label:'Mulching Service',icon:'\uD83C\uDF3E',minPrice:100,maxPrice:150,gasCost:15,timeCost:1.5}
+],
+fall_leaf: [
+{type:'fall_leaf_small',label:'Small Yard Leaf Removal',icon:'\uD83C\uDF42',minPrice:50,maxPrice:80,gasCost:8,timeCost:0.8},
+{type:'fall_leaf_large',label:'Large Yard Leaf Removal',icon:'\uD83C\uDF41',minPrice:80,maxPrice:120,gasCost:14,timeCost:1.2}
+]
+};
+
+const COMPETITOR_NAMES_ACTIONS = [
+'outbid you on','snatched','stole','took over'
 ];
 
 let G = null; // game state
@@ -631,6 +711,20 @@ skills: {fuelEfficiency:0, negotiator:0, equipmentExpert:0, routeMaster:0, peopl
 // Achievements
 achievements: [],
 // Customer loyalty (tracked per contract via loyaltyWeeks field)
+// Seasonal services
+seasonalContracts: [],
+// Competitors
+competitors: [
+{id:'green_envy',name:'Green Envy Lawns',icon:'\uD83D\uDC0D',rep:2.5,fleet:1,strength:1,steals:0},
+{id:'cut_above',name:'A Cut Above',icon:'\u2702\uFE0F',rep:3.0,fleet:2,strength:1.5,steals:0},
+{id:'lawn_stars',name:'Lawn Stars Pro',icon:'\u2B50',rep:2.8,fleet:1,strength:1.2,steals:0}
+],
+// Route planner
+hasRoutePlanner: false,
+// Analytics / weekly history
+weeklyHistory: [],
+// Seasonal job tracking
+seasonalJobsDone: {Winter:0, Spring:0, Summer:0, Fall:0},
 };
 }
 
@@ -671,6 +765,45 @@ mapY: rng(20, 280)
 };
 }
 
+function generateSeasonalContract(season, weekInYear){
+let pool = [];
+if(season === 'Winter'){
+pool = SEASONAL_SERVICES.snow_plow;
+} else if(season === 'Spring' && weekInYear <= 4){
+pool = SEASONAL_SERVICES.spring_cleanup;
+} else if(season === 'Fall' && weekInYear >= 9){
+pool = SEASONAL_SERVICES.fall_leaf;
+}
+if(pool.length === 0) return null;
+const svc = pick(pool);
+const price = rng(svc.minPrice, svc.maxPrice);
+return {
+id: Date.now() + Math.random(),
+customerName: genName(),
+address: genAddress(),
+serviceType: svc.type,
+label: svc.label,
+icon: svc.icon,
+price: price,
+gasCost: svc.gasCost,
+timeCost: svc.timeCost,
+needsTruck: svc.needsTruck || false,
+seasonal: true,
+season: season,
+completed: false,
+mapX: rng(20, 280),
+mapY: rng(20, 280)
+};
+}
+
+function getSeasonWeek(week){
+const m = ((week - 1) % 52);
+if(m < 13) return m + 1; // Spring week 1-13
+if(m < 26) return m - 12; // Summer week 1-13
+if(m < 39) return m - 25; // Fall week 1-13
+return m - 38; // Winter week 1-13
+}
+
 function generateEmployee(){
 const levels = [{level:'Rookie',wage:18,skill:0.6},{level:'Experienced',wage:26,skill:0.8},{level:'Expert',wage:35,skill:0.95}];
 const w = Math.random();
@@ -699,6 +832,7 @@ else if(id==='shop') renderShop();
 else if(id==='employees-screen') renderEmployees();
 else if(id==='map-screen') renderMap();
 else if(id==='skills-screen') renderSkills();
+else if(id==='analytics-screen') renderAnalytics();
 }
 
 function showModal(html){
@@ -791,6 +925,20 @@ if(!G.achievements) G.achievements=[];
 (G.pendingContracts||[]).forEach(c=>{if(c.loyaltyWeeks==null)c.loyaltyWeeks=0});
 // Add upgrades array to owned mowers
 (G.mowers||[]).forEach(m=>{if(m.owned&&!m.upgrades)m.upgrades=[]});
+// Seasonal contracts
+if(!G.seasonalContracts) G.seasonalContracts=[];
+// Competitors
+if(!G.competitors) G.competitors=[
+{id:'green_envy',name:'Green Envy Lawns',icon:'\uD83D\uDC0D',rep:2.5,fleet:1,strength:1,steals:0},
+{id:'cut_above',name:'A Cut Above',icon:'\u2702\uFE0F',rep:3.0,fleet:2,strength:1.5,steals:0},
+{id:'lawn_stars',name:'Lawn Stars Pro',icon:'\u2B50',rep:2.8,fleet:1,strength:1.2,steals:0}
+];
+// Route planner
+if(G.hasRoutePlanner==null) G.hasRoutePlanner=false;
+// Analytics
+if(!G.weeklyHistory) G.weeklyHistory=[];
+// Seasonal tracking
+if(!G.seasonalJobsDone) G.seasonalJobsDone={Winter:0,Spring:0,Summer:0,Fall:0};
 $('bottom-nav').style.display='flex';showScreen('dashboard');
 }
 }
@@ -818,16 +966,26 @@ $('season-bar').innerHTML=`<span class="season-icon">${icon}</span> ${s}, Year $
 <span class="weather-badge ${wClass}">${weatherLabel}</span>`;
 
 const unmowed = G.contracts.filter(c=>!G.weeklyMowed[c.id]).length;
+const pendingSeasonal = (G.seasonalContracts||[]).filter(sc=>!sc.completed).length;
+if(G.season==='Winter'){
+$('dash-greeting').innerHTML = pendingSeasonal > 0
+? `<span>&#10052;</span> Winter: ${pendingSeasonal} seasonal job${pendingSeasonal>1?'s':''} available`
+: `<span>&#9989;</span> All seasonal jobs done! Ready to advance week.`;
+} else {
 $('dash-greeting').innerHTML = unmowed > 0
-? `<span>&#127793;</span> ${G.contracts.length} yards this week, ${unmowed} left to mow`
-: `<span>&#9989;</span> All yards mowed! Ready to advance week.`;
+? `<span>&#127793;</span> ${G.contracts.length} yards this week, ${unmowed} left to mow${pendingSeasonal>0?' + '+pendingSeasonal+' seasonal':''}`
+: `<span>&#9989;</span> All yards mowed!${pendingSeasonal>0?' '+pendingSeasonal+' seasonal job'+(pendingSeasonal>1?'s':'')+' left.':' Ready to advance week.'}`;
+}
 
 // Alerts
 let alerts = '';
 if(G.weather==='rain') alerts+=`<div class="alert-banner warning">&#127783; Rain this week - some customers may cancel if quality is low</div>`;
 if(G.weather==='storm') alerts+=`<div class="alert-banner danger">&#9888; Storm warning - chance of equipment damage</div>`;
 if(G.weather==='drought') alerts+=`<div class="alert-banner info">&#9728; Drought conditions - lawns grow slower, some customers may pause</div>`;
-if(G.season==='Winter') alerts+=`<div class="alert-banner info">&#10052; Winter - no mowing needed. Plan & upgrade for spring!</div>`;
+if(G.season==='Winter'){
+const pendingSeasonal = (G.seasonalContracts||[]).filter(sc=>!sc.completed).length;
+alerts+=`<div class="alert-banner info">&#10052; Winter season${pendingSeasonal>0?' — '+pendingSeasonal+' snow job'+(pendingSeasonal>1?'s':'')+' available!':' — check Shop for snow plowing!'}</div>`;
+}
 if(G.cash < 0) alerts+=`<div class="alert-banner danger">&#128176; You're in debt (${fmt(G.cash)})! Mow yards to earn money or your business will go under.</div>`;
 else if(G.cash < 200) alerts+=`<div class="alert-banner danger">&#128176; Low on cash! Mow your yards and consider picking up more contracts.</div>`;
 // Mower health warnings
@@ -875,7 +1033,25 @@ $('action-cards').innerHTML = `
 <div class="ac-info"><div class="ac-title">Advertise</div><div class="ac-desc">${G.advertisingActive?G.advertisingActive+' active':'Get more customers'}</div></div>
 <div class="ac-arrow">&#8250;</div>
 </div>
+<div class="action-card" onclick="showScreen('analytics-screen')">
+<div class="ac-icon">&#128200;</div>
+<div class="ac-info"><div class="ac-title">Analytics</div><div class="ac-desc">Business performance data</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>
 `;
+
+// Competitors section
+let compHtml = '<div class="section-title">Local Competitors</div><div class="competitor-section">';
+(G.competitors||[]).forEach(comp=>{
+const threat = comp.strength < 1.5 ? 'low' : comp.strength < 3 ? 'medium' : 'high';
+const threatLabel = comp.strength < 1.5 ? 'Low Threat' : comp.strength < 3 ? 'Growing' : 'Dangerous';
+compHtml += `<div class="competitor-card"><div class="comp-icon">${comp.icon}</div><div class="comp-info">
+<div class="comp-name">${comp.name}</div>
+<div class="comp-stats">${comp.rep.toFixed(1)} &#11088; | ${comp.fleet} truck${comp.fleet>1?'s':''} | ${comp.steals} contracts stolen</div>
+</div><span class="comp-threat ${threat}">${threatLabel}</span></div>`;
+});
+compHtml += '</div>';
+$('competitor-area').innerHTML = compHtml;
 
 // Loan info
 let loanHtml = '';
@@ -883,10 +1059,14 @@ if(G.mowerLoan > 0) loanHtml += `<div class="loan-info">&#127974; Mower Loan: ${
 if(G.truckPayment > 0) loanHtml += `<div class="loan-info">&#128666; Truck Payment: ${fmt(G.truckPayment)}/mo</div>`;
 $('loan-area').innerHTML = loanHtml;
 
-// Advance button
-const canAdvance = G.season==='Winter' || unmowed === 0;
+// Advance button — winter allows advance even with pending seasonal jobs (they're optional)
+const canAdvance = (G.season==='Winter') || unmowed === 0;
 $('advance-btn').className = 'advance-week-btn' + (canAdvance?'':' disabled');
-$('advance-btn').textContent = canAdvance ? 'Advance to Next Week \u25B6' : `Mow ${unmowed} remaining yard${unmowed!==1?'s':''} first`;
+if(!canAdvance){
+$('advance-btn').textContent = `Mow ${unmowed} remaining yard${unmowed!==1?'s':''} first`;
+} else {
+$('advance-btn').textContent = 'Advance to Next Week \u25B6';
+}
 }
 
 function updateTopBar(){
@@ -894,7 +1074,7 @@ $('top-cash').textContent = fmt(G.cash);
 $('top-week').textContent = `Week ${G.week} - ${G.season}`;
 const pl = getPlayerLevel ? getPlayerLevel() : {level:1,xpInLevel:0,xpNeeded:100};
 $('top-rep').innerHTML = `${G.reputation.toFixed(1)} &#11088; <span class="xp-mini">Lv${pl.level} <span class="xp-mini-bar"><span class="xp-mini-fill" style="width:${pl.xpInLevel/pl.xpNeeded*100}%"></span></span></span>`;
-['contracts-cash','shop-cash','emp-cash','map-cash','skills-cash'].forEach(id=>{
+['contracts-cash','shop-cash','emp-cash','map-cash','skills-cash','analytics-cash'].forEach(id=>{
 const el=$(id);if(el)el.textContent=fmt(G.cash);
 });
 }
@@ -905,8 +1085,11 @@ if(r>=3)return'Average';if(r>=2)return'Below Average';return'Poor';
 }
 
 function calcWeeklyRevenue(){
-if(G.season==='Winter') return 0;
-return G.contracts.reduce((s,c)=>s+getEffectivePrice(c),0);
+let rev = 0;
+if(G.season!=='Winter') rev = G.contracts.reduce((s,c)=>s+getEffectivePrice(c),0);
+// Add seasonal contract revenue
+(G.seasonalContracts||[]).forEach(sc=>{if(!sc.completed) rev += sc.price;});
+return rev;
 }
 
 function calcWeeklyExpenses(){
@@ -944,7 +1127,8 @@ function calcContractGasCost(c){
 const yt = YARD_TYPES.find(y=>y.type===c.type);
 const baseGas = (yt ? yt.baseTime/15 : 3);
 const fuelDiscount = 1 - (G.skills ? getSkillEffect('fuelEfficiency') : 0);
-return Math.round((baseGas * (G.gasPrice||3.50) / 3.50 * fuelDiscount) * 100) / 100;
+const routePlannerDiscount = G.hasRoutePlanner ? 0.90 : 1;
+return Math.round((baseGas * (G.gasPrice||3.50) / 3.50 * fuelDiscount * routePlannerDiscount) * 100) / 100;
 }
 
 function calcRouteInfo(){
@@ -1038,7 +1222,40 @@ avail += `<div class="contract-card" style="box-shadow:none;margin:8px 0;border:
 });
 avail += '</div>';
 }
-$('available-contracts').innerHTML = avail;
+// Seasonal contracts section
+let seasonalHtml = '';
+if((G.seasonalContracts||[]).length > 0){
+seasonalHtml = `<div class="new-contracts-section" style="border-color:#0c5460;background:#e8f4f8"><h3>${G.season==='Winter'?'\u2744\uFE0F Snow Jobs':G.season==='Spring'?'\uD83C\uDF3F Spring Cleanup':'\uD83C\uDF42 Fall Leaf Removal'}</h3>`;
+G.seasonalContracts.forEach(sc=>{
+const hasTruck = (G.ownedTrucks||[]).length > 0;
+const canDo = !sc.needsTruck || hasTruck;
+const seasonClass = G.season==='Winter'?'winter-service':G.season==='Spring'?'spring-service':'fall-service';
+const tagClass = G.season==='Winter'?'snow':G.season==='Spring'?'spring-clean':'leaf';
+seasonalHtml += `<div class="contract-card seasonal ${seasonClass}" style="margin:8px 0;box-shadow:none;border-right:none;border-top:none;border-bottom:none">
+<div class="contract-header">
+<div><div class="contract-name">${sc.icon} ${sc.customerName}</div><div style="font-size:.75rem;color:var(--text-light)">${sc.address}</div></div>
+<div class="contract-price">${fmt(sc.price)}</div>
+</div>
+<div class="contract-details">
+<span>${sc.label}</span>
+<span class="seasonal-tag ${tagClass}">${sc.season} Service</span>
+<span>&#9981; ~${fmt(sc.gasCost)} gas</span>
+${sc.needsTruck?'<span class="truck-badge">\uD83D\uDE9A Needs truck</span>':''}
+</div>
+<div class="contract-status">
+${sc.completed ? '<span class="mowed">&#9989; Completed</span>' : '<span class="not-mowed">&#10060; Not done</span>'}
+</div>
+${!sc.completed ? `<div class="contract-actions">
+${canDo ? `<button class="btn-do-job" onclick="doSeasonalJob('${sc.id}')">&#10052; Do Job</button>` :
+`<button class="btn-do-job" disabled style="opacity:.4">Need a truck first</button>`}
+<button class="btn-drop" onclick="dropSeasonalContract('${sc.id}')">Drop</button>
+</div>` : ''}
+</div>`;
+});
+seasonalHtml += '</div>';
+}
+
+$('available-contracts').innerHTML = seasonalHtml + avail;
 }
 
 function acceptContract(id){
@@ -1056,6 +1273,43 @@ G.contracts = G.contracts.filter(c=>String(c.id)!==String(id));
 G.employees.forEach(e=>{e.assignedContracts=e.assignedContracts.filter(cid=>String(cid)!==String(id))});
 delete G.weeklyMowed[id];
 G.reputation = Math.max(1, G.reputation - 0.1);
+saveGame();
+renderContracts();
+}
+
+function doSeasonalJob(id){
+const sc = (G.seasonalContracts||[]).find(s=>String(s.id)===String(id));
+if(!sc || sc.completed) return;
+// Check truck requirement
+if(sc.needsTruck && (G.ownedTrucks||[]).length === 0){
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>Need a Truck!</h2><p>Snow plowing requires a truck. Buy one in the Shop first.</p>`);
+return;
+}
+sc.completed = true;
+G.cash += sc.price;
+G.weekGas += sc.gasCost;
+G.totalRevenue += sc.price;
+// XP for seasonal work
+const xpGain = Math.round(sc.price / 10);
+addXP(xpGain, sc.label);
+// Reputation boost
+G.totalRepJobs++;
+G.totalRepScore += 4; // seasonal jobs are well-received
+G.reputation = clamp(G.totalRepScore / G.totalRepJobs, 1, 5);
+// Track seasonal jobs
+if(!G.seasonalJobsDone) G.seasonalJobsDone={Winter:0,Spring:0,Summer:0,Fall:0};
+G.seasonalJobsDone[sc.season] = (G.seasonalJobsDone[sc.season]||0) + 1;
+// Achievement checks
+if(G.seasonalJobsDone.Winter >= 10) unlockAchievement('snow_boss');
+if(G.seasonalJobsDone.Winter > 0 && G.seasonalJobsDone.Spring > 0 && G.seasonalJobsDone.Fall > 0 && G.totalRepJobs > 3) unlockAchievement('all_seasons');
+checkAchievements();
+saveGame();
+showToast(`${sc.label} done! +${fmt(sc.price)}`, sc.icon);
+renderContracts();
+}
+
+function dropSeasonalContract(id){
+G.seasonalContracts = (G.seasonalContracts||[]).filter(s=>String(s.id)!==String(id));
 saveGame();
 renderContracts();
 }
@@ -1164,6 +1418,12 @@ ${G.advertisingActive==='Local Ads'?'<div class="shop-item-owned">&#9989; Active
 <div class="shop-item-stats">Professional website with online booking. Steady stream of leads.</div>
 ${G.hasWebsite?'<div class="shop-item-owned">&#9989; Active</div>':
 `<button class="btn-buy" ${G.cash<500?'disabled':''} onclick="buyWebsite()">Build Website</button>`}
+</div>
+<div class="shop-item">
+<div class="shop-item-header"><div class="shop-item-name">\uD83D\uDDFA Route Planner Pro</div><div class="shop-item-price">$1,000</div></div>
+<div class="shop-item-stats">GPS route optimization software. Shows optimal routes on map. Saves 10% on gas (stacks with Route Master skill).</div>
+${G.hasRoutePlanner?'<div class="shop-item-owned">&#9989; Installed</div>':
+`<button class="btn-buy" ${G.cash<1000?'disabled':''} onclick="buyRoutePlanner()">Buy Route Planner</button>`}
 </div>`;
 }
 
@@ -1230,6 +1490,15 @@ function buyWebsite(){
 if(G.cash<500)return;
 G.cash-=500;
 G.hasWebsite=true;
+saveGame();
+renderShop();
+}
+
+function buyRoutePlanner(){
+if(G.cash<1000 || G.hasRoutePlanner) return;
+G.cash-=1000;
+G.hasRoutePlanner=true;
+showToast('Route Planner Pro installed! -10% gas cost + map routes.','\uD83D\uDDFA');
 saveGame();
 renderShop();
 }
@@ -1371,6 +1640,47 @@ ctx.fillStyle='#b44';
 ctx.beginPath();ctx.moveTo(hx-1,hy);ctx.lineTo(hx+5,hy-4);ctx.lineTo(hx+11,hy);ctx.fill();
 });
 
+// Route Planner: draw optimized route lines (nearest-neighbor)
+if(G.hasRoutePlanner && G.contracts.length >= 2){
+const hqX = size/2, hqY = size/2;
+// Build route using nearest-neighbor
+const allPts = G.contracts.map(c=>({x:(c.mapX/300)*size, y:(c.mapY/300)*size, id:c.id}));
+const route = [];
+const visited = new Set();
+let cx = hqX, cy = hqY;
+while(route.length < allPts.length){
+let best = null, bestDist = Infinity;
+allPts.forEach(p=>{
+if(visited.has(p.id)) return;
+const d = Math.sqrt((p.x-cx)**2+(p.y-cy)**2);
+if(d < bestDist){bestDist=d;best=p;}
+});
+if(!best) break;
+route.push(best);
+visited.add(best.id);
+cx=best.x; cy=best.y;
+}
+// Draw route lines
+ctx.strokeStyle='rgba(26,86,219,0.5)'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]);
+ctx.beginPath();
+ctx.moveTo(hqX, hqY);
+let totalRouteDist = 0;
+let prevX = hqX, prevY = hqY;
+route.forEach(p=>{
+ctx.lineTo(p.x, p.y);
+totalRouteDist += Math.sqrt((p.x-prevX)**2+(p.y-prevY)**2);
+prevX=p.x; prevY=p.y;
+});
+ctx.stroke();
+ctx.setLineDash([]);
+// Route numbers
+route.forEach((p,i)=>{
+ctx.fillStyle='rgba(26,86,219,0.8)';
+ctx.font='bold 6px Inter';ctx.textAlign='center';
+ctx.fillText(''+(i+1), p.x, p.y+14);
+});
+}
+
 // Your HQ
 ctx.fillStyle='#2d5a27';
 ctx.beginPath();ctx.arc(size/2,size/2,10,0,Math.PI*2);ctx.fill();
@@ -1384,28 +1694,70 @@ G.contracts.forEach(c=>{
 const x = (c.mapX/300)*size;
 const y = (c.mapY/300)*size;
 const mowed = G.weeklyMowed[c.id];
-// Pin
 ctx.fillStyle = mowed?'#4a8c3f':'#cc3333';
 ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();
 ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
 ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.stroke();
-// Inner dot
 ctx.fillStyle='#fff';
 ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
-// Label
 ctx.fillStyle='#1a2e1a';ctx.font='bold 6px Inter';ctx.textAlign='center';
 ctx.fillText(c.customerName.split(' ')[1],x,y-9);
 });
 
+// Seasonal contract pins
+(G.seasonalContracts||[]).forEach(sc=>{
+const x = (sc.mapX/300)*size;
+const y = (sc.mapY/300)*size;
+ctx.fillStyle = sc.completed?'#4a8c3f':'#1a56db';
+ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=1;
+ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.stroke();
+ctx.fillStyle='#1a2e1a';ctx.font='6px Inter';ctx.textAlign='center';
+ctx.fillText(sc.label.split(' ')[0],x,y-8);
+});
+
+// Competitor HQs
+(G.competitors||[]).forEach((comp,i)=>{
+const positions = [[size*0.15,size*0.15],[size*0.85,size*0.2],[size*0.8,size*0.85]];
+const [cx2,cy2] = positions[i] || [size*0.5,size*0.1];
+ctx.fillStyle='#d44';
+ctx.beginPath();ctx.arc(cx2,cy2,7,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
+ctx.beginPath();ctx.arc(cx2,cy2,7,0,Math.PI*2);ctx.stroke();
+ctx.fillStyle='#fff';ctx.font='bold 5px Inter';ctx.textAlign='center';
+ctx.fillText(comp.icon,cx2,cy2+2);
+ctx.fillStyle='#721c24';ctx.font='5px Inter';
+ctx.fillText(comp.name.split(' ')[0],cx2,cy2-10);
+});
+
 // Legend
-const ly = size - 30;
-ctx.fillStyle='rgba(255,255,255,0.85)';
-ctx.fillRect(5, ly-2, 120, 28);
+const ly = size - 40;
+ctx.fillStyle='rgba(255,255,255,0.9)';
+ctx.fillRect(5, ly-2, 135, 40);
 ctx.fillStyle='#cc3333';ctx.beginPath();ctx.arc(15,ly+6,4,0,Math.PI*2);ctx.fill();
 ctx.fillStyle='#1a2e1a';ctx.font='7px Inter';ctx.textAlign='left';
 ctx.fillText('Needs mowing',24,ly+9);
 ctx.fillStyle='#4a8c3f';ctx.beginPath();ctx.arc(15,ly+18,4,0,Math.PI*2);ctx.fill();
 ctx.fillStyle='#1a2e1a';ctx.fillText('Done',24,ly+21);
+ctx.fillStyle='#1a56db';ctx.beginPath();ctx.arc(15,ly+30,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#1a2e1a';ctx.fillText('Seasonal',24,ly+33);
+ctx.fillStyle='#d44';ctx.beginPath();ctx.arc(80,ly+6,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#1a2e1a';ctx.fillText('Competitor',89,ly+9);
+
+// Route planner savings info
+if(G.hasRoutePlanner){
+const infoEl = $('map-screen').querySelector('.route-planner-info');
+if(!infoEl){
+const div = document.createElement('div');
+div.className='route-planner-info';
+const baseSavings = 10 + (G.skills ? getSkillEffect('routeMaster') * 100 : 0);
+div.innerHTML=`\uD83D\uDDFA Route Planner Active — est. ${Math.round(baseSavings)}% gas savings this week`;
+$('map-screen').insertBefore(div, canvas);
+} else {
+const baseSavings = 10 + (G.skills ? getSkillEffect('routeMaster') * 100 : 0);
+infoEl.innerHTML=`\uD83D\uDDFA Route Planner Active — est. ${Math.round(baseSavings)}% gas savings this week`;
+}
+}
 }
 
 // ===== MOWING MINI-GAME =====
@@ -2393,9 +2745,15 @@ G.advertisingWeeksLeft--;
 if(G.advertisingWeeksLeft <= 0) G.advertisingActive = null;
 }
 
+// Seasonal contract revenue (already paid out via doSeasonalJob, gas already in weekGas)
+let seasonalRevenue = 0;
+(G.seasonalContracts||[]).forEach(sc=>{
+if(sc.completed) seasonalRevenue += sc.price;
+});
+
 expenses = gasCost + wagesCost + maintenanceCost + insuranceCost + loanPayment + truckPay + websiteCost + adCost;
 
-// Net income
+// Net income (seasonal revenue already added to cash via doSeasonalJob, so don't double-count)
 const net = revenue - expenses;
 G.cash += net;
 G.totalRevenue += revenue;
@@ -2512,11 +2870,72 @@ unlockAchievement('storm_chaser');
 // Check general achievements
 checkAchievements();
 
+// === RECORD WEEKLY HISTORY for Analytics ===
+if(!G.weeklyHistory) G.weeklyHistory = [];
+const completedSeasonal = (G.seasonalContracts||[]).filter(sc=>sc.completed).length;
+G.weeklyHistory.push({
+week: G.week,
+season: G.season,
+revenue: revenue,
+seasonalRevenue: seasonalRevenue,
+expenses: expenses,
+net: net,
+cash: G.cash,
+contracts: G.contracts.length,
+employees: G.employees.length,
+reputation: G.reputation,
+mowedCount: mowedCount,
+seasonalCount: completedSeasonal,
+customerSatisfaction: G.contracts.length > 0 ? Math.round(G.contracts.reduce((s,c)=>s+c.satisfaction,0)/G.contracts.length*10)/10 : 0
+});
+if(G.weeklyHistory.length > 20) G.weeklyHistory.shift();
+
 // Advance week
 G.week++;
 G.season = getSeason(G.week);
 G.weather = pick(WEATHER_TYPES);
 G.weeklyMowed = {};
+
+// === COMPETITOR ACTIONS ===
+(G.competitors||[]).forEach(comp=>{
+// Competitors grow slowly over time
+if(Math.random() < 0.15) comp.strength = Math.round((comp.strength + 0.1)*10)/10;
+if(Math.random() < 0.1 && comp.fleet < 5) comp.fleet++;
+if(Math.random() < 0.2) comp.rep = clamp(Math.round((comp.rep + (Math.random()-0.3)*0.3)*10)/10, 1, 5);
+
+// Steal pending contracts (if competitor rep is close to player's)
+if(G.pendingContracts.length > 0 && Math.random() < 0.15 * comp.strength){
+const repDefense = G.reputation > comp.rep ? 0.3 : 0;
+if(Math.random() > repDefense){
+const stolen = G.pendingContracts.splice(rng(0,G.pendingContracts.length-1), 1)[0];
+if(stolen){
+comp.steals++;
+G.weekEvents.push({text:`${comp.name} ${pick(COMPETITOR_NAMES_ACTIONS)} a contract from ${stolen.customerName}!`,type:'bad'});
+}
+}
+}
+
+// Poach employees (rare, only if comp is strong)
+if(G.employees.length > 1 && comp.strength > 2 && Math.random() < 0.05){
+const repDefense = G.reputation >= 4 ? 0.6 : G.reputation >= 3.5 ? 0.3 : 0;
+if(Math.random() > repDefense){
+const target = pick(G.employees);
+if(target && target.morale < 60){
+G.employees = G.employees.filter(e=>e.id !== target.id);
+G.weekEvents.push({text:`${comp.name} poached ${target.name} with a better offer!`,type:'bad'});
+comp.fleet = Math.min(comp.fleet+1, 6);
+}
+}
+}
+
+// Lower market prices occasionally
+if(Math.random() < 0.05 * comp.strength){
+G.contracts.forEach(c=>{
+if(Math.random() < 0.1) c.price = Math.max(20, c.price - rng(3,8));
+});
+G.weekEvents.push({text:`${comp.name} is undercutting prices in the area.`,type:'bad'});
+}
+});
 
 // Insurance grows with company
 G.insurance = 150 + G.employees.length * 50 + G.contracts.length * 5;
@@ -2539,24 +2958,55 @@ G.weekEvents.push({text:`${m.name} is critically damaged (${Math.round(m.health)
 }
 });
 
-// Seasonal effects
+// === SEASONAL CONTRACT GENERATION ===
+G.seasonalContracts = []; // reset each week
+const weekInSeason = getSeasonWeek(G.week);
 if(G.season === 'Winter'){
-G.weekEvents.push({text:'Winter has arrived. No mowing this season - plan for spring!',type:'neutral'});
+// Generate 2-4 snow plowing jobs per winter week
+const snowCount = rng(2,4);
+for(let i=0;i<snowCount;i++){
+const sc = generateSeasonalContract('Winter', weekInSeason);
+if(sc) G.seasonalContracts.push(sc);
+}
+G.weekEvents.push({text:`${snowCount} snow jobs available this week!`,type:'neutral'});
+} else if(G.season === 'Spring' && weekInSeason <= 4){
+const cleanCount = rng(1,3);
+for(let i=0;i<cleanCount;i++){
+const sc = generateSeasonalContract('Spring', weekInSeason);
+if(sc) G.seasonalContracts.push(sc);
+}
+G.weekEvents.push({text:`${cleanCount} spring cleanup job${cleanCount>1?'s':''} available!`,type:'neutral'});
+} else if(G.season === 'Fall' && weekInSeason >= 9){
+const leafCount = rng(1,3);
+for(let i=0;i<leafCount;i++){
+const sc = generateSeasonalContract('Fall', weekInSeason);
+if(sc) G.seasonalContracts.push(sc);
+}
+G.weekEvents.push({text:`${leafCount} leaf removal job${leafCount>1?'s':''} available!`,type:'neutral'});
+} else {
+G.seasonalContracts = [];
+}
+
+// Seasonal effects message
+if(G.season === 'Winter' && weekInSeason === 1){
+G.weekEvents.push({text:'Winter has arrived. Mowing stops, but snow plowing jobs are available!',type:'neutral'});
 }
 
 // Show summary
-showWeekSummary(revenue, gasCost, wagesCost, maintenanceCost, insuranceCost, loanPayment, truckPay, websiteCost, adCost, net);
+showWeekSummary(revenue, seasonalRevenue, gasCost, wagesCost, maintenanceCost, insuranceCost, loanPayment, truckPay, websiteCost, adCost, net);
 saveGame();
 }
 
-function showWeekSummary(revenue, gas, wages, maint, insurance, loan, truck, website, ads, net){
+function showWeekSummary(revenue, seasonalRev, gas, wages, maint, insurance, loan, truck, website, ads, net){
 $('summary-week-num').textContent = `Week ${G.week - 1} Complete`;
 
 let html = '';
 
 // Revenue card
 html += `<div class="summary-card"><h3>Revenue</h3>`;
-html += `<div class="summary-line"><span>Mowing Income</span><span class="positive">+${fmt(revenue)}</span></div>`;
+if(revenue > 0) html += `<div class="summary-line"><span>Mowing Income</span><span class="positive">+${fmt(revenue)}</span></div>`;
+if(seasonalRev > 0) html += `<div class="summary-line"><span>Seasonal Services</span><span class="positive">+${fmt(seasonalRev)}</span></div>`;
+if(revenue === 0 && seasonalRev === 0) html += `<div class="summary-line"><span>No revenue this week</span><span>$0</span></div>`;
 html += `</div>`;
 
 // Expenses card
@@ -2797,6 +3247,158 @@ price *= (1 + getContractLoyaltyBonus(c));
 // Negotiator skill
 price *= (1 + getSkillEffect('negotiator'));
 return Math.round(price);
+}
+
+// ===== ANALYTICS DASHBOARD =====
+function renderAnalytics(){
+updateTopBar();
+const hist = G.weeklyHistory || [];
+let html = '';
+
+// Key metrics summary
+const totalRev = hist.reduce((s,w)=>s+w.revenue+(w.seasonalRevenue||0),0);
+const totalExp = hist.reduce((s,w)=>s+w.expenses,0);
+const avgProfit = hist.length > 0 ? Math.round((totalRev - totalExp) / hist.length) : 0;
+const avgSat = hist.length > 0 ? Math.round(hist.reduce((s,w)=>s+(w.customerSatisfaction||0),0)/hist.length*10)/10 : 0;
+
+html += `<div class="analytics-chart"><h3>Overview (Last ${hist.length} Weeks)</h3>
+<div class="metric-grid">
+<div class="metric-item"><div class="metric-val">${fmt(totalRev)}</div><div class="metric-label">Total Revenue</div></div>
+<div class="metric-item"><div class="metric-val">${fmt(avgProfit)}</div><div class="metric-label">Avg Weekly Profit</div></div>
+<div class="metric-item"><div class="metric-val">${avgSat}/5</div><div class="metric-label">Avg Satisfaction</div></div>
+<div class="metric-item"><div class="metric-val">${G.contracts.length}</div><div class="metric-label">Active Contracts</div></div>
+</div></div>`;
+
+// Weekly Profit/Loss bar chart (last 10 weeks)
+const recent = hist.slice(-10);
+if(recent.length > 0){
+const maxAbs = Math.max(1, ...recent.map(w=>Math.abs(w.net)));
+html += `<div class="analytics-chart"><h3>Weekly Profit/Loss</h3><div class="bar-chart">`;
+recent.forEach(w=>{
+const pct = Math.round(Math.abs(w.net) / maxAbs * 80);
+const isPos = w.net >= 0;
+html += `<div class="bar-col">
+<div class="bar-value">${w.net>=0?'+':''}${fmt(w.net)}</div>
+<div class="bar ${isPos?'positive':'negative'}" style="height:${Math.max(4,pct)}px"></div>
+<div class="bar-label">W${w.week}</div>
+</div>`;
+});
+html += `</div></div>`;
+}
+
+// Revenue breakdown (mowing vs seasonal)
+const mowingTotal = hist.reduce((s,w)=>s+w.revenue,0);
+const seasonalTotal = hist.reduce((s,w)=>s+(w.seasonalRevenue||0),0);
+if(mowingTotal > 0 || seasonalTotal > 0){
+html += `<div class="analytics-chart"><h3>Revenue Breakdown</h3><div class="pie-row">
+<canvas id="pie-canvas" width="120" height="120"></canvas>
+<div class="pie-legend">
+<div class="pie-legend-item"><div class="pie-legend-dot" style="background:var(--green-mid)"></div>Mowing: ${fmt(mowingTotal)} (${Math.round(mowingTotal/(mowingTotal+seasonalTotal+0.01)*100)}%)</div>
+<div class="pie-legend-item"><div class="pie-legend-dot" style="background:#0c5460"></div>Seasonal: ${fmt(seasonalTotal)} (${Math.round(seasonalTotal/(mowingTotal+seasonalTotal+0.01)*100)}%)</div>
+</div></div></div>`;
+}
+
+// Customer satisfaction over time
+if(recent.length > 1){
+const maxSat = 5;
+html += `<div class="analytics-chart"><h3>Customer Satisfaction Trend</h3><div class="bar-chart">`;
+recent.forEach(w=>{
+const pct = Math.round((w.customerSatisfaction||0) / maxSat * 80);
+html += `<div class="bar-col">
+<div class="bar-value">${(w.customerSatisfaction||0).toFixed(1)}</div>
+<div class="bar positive" style="height:${Math.max(4,pct)}px;background:${(w.customerSatisfaction||0)>=4?'var(--success)':(w.customerSatisfaction||0)>=3?'var(--warning)':'var(--danger)'}"></div>
+<div class="bar-label">W${w.week}</div>
+</div>`;
+});
+html += `</div></div>`;
+}
+
+// Employee performance
+if(G.employees.length > 0){
+html += `<div class="analytics-chart"><h3>Employee Performance</h3>`;
+G.employees.forEach(e=>{
+const yards = e.assignedContracts.length;
+const moraleColor = e.morale >= 70 ? 'var(--success)' : e.morale >= 50 ? 'var(--warning)' : 'var(--danger)';
+html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+<div style="flex:1;font-size:.8rem;font-weight:600">${e.name}</div>
+<div style="font-size:.7rem;color:var(--text-light)">${yards} yard${yards!==1?'s':''}</div>
+<div style="width:60px;height:6px;border-radius:3px;background:#e0e0e0;overflow:hidden">
+<div style="height:100%;width:${e.morale}%;background:${moraleColor};border-radius:3px"></div>
+</div>
+<div style="font-size:.65rem;width:32px;text-align:right">${e.morale}%</div>
+</div>`;
+});
+html += `</div>`;
+}
+
+// Equipment utilization
+const ownedMowers = G.mowers.filter(m=>m.owned);
+if(ownedMowers.length > 0){
+html += `<div class="analytics-chart"><h3>Equipment Status</h3>`;
+ownedMowers.forEach(m=>{
+const health = m.health != null ? m.health : 100;
+const healthColor = health > 50 ? 'var(--success)' : health > 25 ? 'var(--warning)' : 'var(--danger)';
+html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+<div style="flex:1;font-size:.8rem;font-weight:600">${m.name}</div>
+<div style="width:80px;height:6px;border-radius:3px;background:#e0e0e0;overflow:hidden">
+<div style="height:100%;width:${health}%;background:${healthColor};border-radius:3px"></div>
+</div>
+<div style="font-size:.65rem;width:36px;text-align:right">${Math.round(health)}%</div>
+</div>`;
+});
+(G.ownedTrucks||[]).forEach(t=>{
+html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+<div style="flex:1;font-size:.8rem;font-weight:600">\uD83D\uDE9A ${t.name}</div>
+<div style="font-size:.7rem;color:var(--text-light)">${t.assignedTo?'In use':'Available'}</div>
+<div style="font-size:.65rem;width:36px;text-align:right">${Math.round(t.reliability*100)}%</div>
+</div>`;
+});
+html += `</div>`;
+}
+
+// Competitor comparison
+if((G.competitors||[]).length > 0){
+html += `<div class="analytics-chart"><h3>Competitive Landscape</h3>`;
+html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px;background:var(--green-pale);border-radius:6px">
+<div style="flex:1;font-size:.8rem;font-weight:700">\uD83C\uDF3F You</div>
+<div style="font-size:.75rem">${G.reputation.toFixed(1)} \u2B50</div>
+<div style="font-size:.7rem;color:var(--text-light)">${(G.ownedTrucks||[]).length} trucks</div>
+</div>`;
+(G.competitors||[]).forEach(comp=>{
+html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px;border-radius:6px;background:#f8f8f8">
+<div style="flex:1;font-size:.8rem;font-weight:600">${comp.icon} ${comp.name}</div>
+<div style="font-size:.75rem">${comp.rep.toFixed(1)} \u2B50</div>
+<div style="font-size:.7rem;color:var(--text-light)">${comp.fleet} trucks</div>
+</div>`;
+});
+html += `</div>`;
+}
+
+if(hist.length === 0){
+html += `<div style="padding:40px 16px;text-align:center;color:var(--text-light)">No data yet. Complete a week to see analytics.</div>`;
+}
+
+$('analytics-content').innerHTML = html;
+
+// Draw pie chart if canvas exists
+setTimeout(()=>{
+const pieCanvas = document.getElementById('pie-canvas');
+if(!pieCanvas) return;
+const pctx = pieCanvas.getContext('2d');
+const cx = 60, cy = 60, r = 50;
+const total = mowingTotal + seasonalTotal;
+if(total <= 0) return;
+const mowAngle = (mowingTotal / total) * Math.PI * 2;
+// Mowing slice
+pctx.fillStyle = '#4a8c3f';
+pctx.beginPath();pctx.moveTo(cx,cy);pctx.arc(cx,cy,r,0,mowAngle);pctx.closePath();pctx.fill();
+// Seasonal slice
+pctx.fillStyle = '#0c5460';
+pctx.beginPath();pctx.moveTo(cx,cy);pctx.arc(cx,cy,r,mowAngle,Math.PI*2);pctx.closePath();pctx.fill();
+// Center hole
+pctx.fillStyle = '#fff';
+pctx.beginPath();pctx.arc(cx,cy,25,0,Math.PI*2);pctx.fill();
+}, 50);
 }
 
 </script>
