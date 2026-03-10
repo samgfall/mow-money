@@ -206,6 +206,13 @@ position:absolute;pointer-events:none;display:none}
 position:absolute;top:35px;left:35px;pointer-events:none}
 
 /* THROTTLE SLIDER */
+/* Twin Levers (zero-turn style) */
+.twin-levers{position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:space-between;padding:0 30px;z-index:20;pointer-events:none}
+.lever-zone{width:60px;height:200px;display:flex;flex-direction:column;align-items:center;pointer-events:auto;touch-action:none}
+.lever-track{width:12px;height:160px;border-radius:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);position:relative}
+.lever-handle{width:40px;height:20px;border-radius:6px;background:rgba(255,255,255,.7);position:absolute;left:50%;transform:translateX(-50%);top:50%;margin-top:-10px;
+box-shadow:0 2px 6px rgba(0,0,0,.3);transition:top 0.05s}
+.lever-label{color:rgba(255,255,255,.7);font-size:.7rem;font-weight:700;margin-top:6px;text-transform:uppercase}
 .throttle-area{position:absolute;bottom:80px;right:16px;width:44px;height:180px;z-index:20;touch-action:none;
 display:flex;flex-direction:column;align-items:center}
 .throttle-track{width:8px;height:140px;border-radius:4px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
@@ -307,7 +314,7 @@ justify-content:center;align-items:center;z-index:25;color:#fff;text-align:cente
 <div id="mower-list"></div>
 <div class="section-title">Vehicles</div>
 <div id="vehicle-list"></div>
-<div class="section-title">Advertising</div>
+<div class="section-title" id="shop-ads">Advertising</div>
 <div id="ad-list"></div>
 </div>
 
@@ -344,6 +351,17 @@ justify-content:center;align-items:center;z-index:25;color:#fff;text-align:cente
 <canvas id="mow-canvas"></canvas>
 <div class="joystick-touch-area" id="joystick-touch-area">
 <div class="dyn-joystick-base" id="dyn-joystick-base"><div class="dyn-joystick-knob" id="dyn-joystick-knob"></div></div>
+</div>
+<!-- Twin Levers for standard zero-turns -->
+<div class="twin-levers" id="twin-levers" style="display:none">
+<div class="lever-zone lever-left" id="lever-left">
+<div class="lever-track"><div class="lever-handle" id="lever-handle-L"></div></div>
+<div class="lever-label">L</div>
+</div>
+<div class="lever-zone lever-right" id="lever-right">
+<div class="lever-track"><div class="lever-handle" id="lever-handle-R"></div></div>
+<div class="lever-label">R</div>
+</div>
 </div>
 <div class="throttle-area" id="throttle-area">
 <div class="throttle-track" id="throttle-track">
@@ -594,7 +612,8 @@ if(G.cash < 200) alerts+=`<div class="alert-banner danger">&#128176; Low on cash
 // Mower health warnings
 G.mowers.forEach(m=>{
 if(m.owned && (m.health||100) <= 0) alerts+=`<div class="alert-banner danger">&#128165; ${m.name} is DESTROYED! Repair it in the shop.</div>`;
-else if(m.owned && (m.health||100) < 25) alerts+=`<div class="alert-banner warning">&#128295; ${m.name} is critically damaged (${Math.round(m.health)}%)</div>`;
+else if(m.owned && (m.health||100) < 25) alerts+=`<div class="alert-banner danger">&#128295; ${m.name} is critically damaged (${Math.round(m.health)}%) — repair in Shop!</div>`;
+else if(m.owned && (m.health||100) < 75) alerts+=`<div class="alert-banner warning">&#128295; ${m.name} needs maintenance (${Math.round(m.health)}%) — repair in Shop</div>`;
 });
 // Unassigned trucks warning
 const empsNoTruck = G.employees.filter(e=>!getEmployeeTruck(e.id));
@@ -962,10 +981,10 @@ if(newContracts>0) showModal(`<button class="modal-close" onclick="closeModal()"
 else showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>Flyers Distributed</h2><p>No responses yet, but your name is getting out there.</p>`);
 } else if(type==='local'){
 if(G.cash<200)return;
-G.cash-=200;
 G.advertisingActive='Local Ads';
 G.advertisingWeeksLeft=4;
 saveGame();
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>Local Ads Active!</h2><p>$200/week for 4 weeks. Strong chance of new contracts each week.</p>`);
 }
 renderShop();
 }
@@ -980,6 +999,7 @@ renderShop();
 
 function showAdvertising(){
 showScreen('shop');
+setTimeout(()=>{const el=$('shop-ads');if(el)el.scrollIntoView({behavior:'smooth'});},100);
 }
 
 // ===== EMPLOYEES =====
@@ -1162,6 +1182,12 @@ let throttleValue = 0.5; // 0-1
 let throttleTouchId = null;
 let keysDown = {};
 let breakdownTimer = null;
+// Twin lever system
+let leverLeftValue = 0; // -1 to 1 (center=0=neutral, up=forward, down=reverse)
+let leverRightValue = 0;
+let leverLeftTouchId = null;
+let leverRightTouchId = null;
+let controlMode = 'joystick'; // 'joystick' (Country Clipper) or 'levers' (standard zero-turn)
 
 function startMowing(contractId){
 const c = G.contracts.find(c2=>String(c2.id)===String(contractId));
@@ -1180,6 +1206,18 @@ const screen = $('mowing-screen');
 
 showScreen('mowing-screen');
 $('bottom-nav').style.display='none';
+
+// Control mode based on mower — Country Clipper gets single joystick (easier!), others get twin levers
+const isClipper = bestFunctional.id && bestFunctional.id.includes('clipper');
+controlMode = isClipper ? 'joystick' : 'levers';
+// Show/hide controls
+$('joystick-touch-area').style.display = controlMode === 'joystick' ? 'block' : 'none';
+$('twin-levers').style.display = controlMode === 'levers' ? 'flex' : 'none';
+// Reset levers
+leverLeftValue = 0; leverRightValue = 0;
+leverLeftTouchId = null; leverRightTouchId = null;
+// Hide throttle slider in lever mode (levers control speed)
+$('throttle-area').style.display = controlMode === 'levers' ? 'none' : 'block';
 
 // Size canvas to screen
 const w = window.innerWidth;
@@ -1290,7 +1328,8 @@ fill.style.width = h + '%';
 fill.style.background = h > 50 ? 'var(--success)' : h > 25 ? 'var(--warning)' : 'var(--danger)';
 text.textContent = Math.round(h) + '%';
 const speedPct = Math.round(throttleValue * 100);
-$('hud-speed').innerHTML = `&#9881; ${speedPct}%${keysDown['Shift']?' BOOST':''}`;
+const ctrlLabel = controlMode === 'levers' ? '🎚️ Twin Levers' : '🕹️ Joystick';
+$('hud-speed').innerHTML = `&#9881; ${speedPct}% | ${ctrlLabel}${keysDown['Shift']?' BOOST':''}`;
 }
 
 function mowLoop(){
@@ -1345,13 +1384,42 @@ ms.mowerWidth = ms.baseMowerWidth + widthBonus;
 // Drift at high speed
 const driftAmount = throttleValue > 0.7 ? (throttleValue - 0.7) * 0.15 : 0;
 
-// Move mower
+// Move mower — twin levers (standard zero-turn) or joystick (Country Clipper)
 let dx = 0, dy = 0;
+if(controlMode === 'levers'){
+const lev = getLeversAsDxDy();
+dx = lev.dx; dy = lev.dy;
+// Keyboard: Q/E or Z/C for individual levers, WASD still works as shortcut
+if(keysDown['q']||keysDown['Q']) leverLeftValue = Math.min(1, leverLeftValue + 0.05);
+if(keysDown['e']||keysDown['E']) leverRightValue = Math.min(1, leverRightValue + 0.05);
+if(keysDown['z']||keysDown['Z']) leverLeftValue = Math.max(-1, leverLeftValue - 0.05);
+if(keysDown['c']||keysDown['C']) leverRightValue = Math.max(-1, leverRightValue - 0.05);
+// WASD as shortcut (both levers together)
+if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']){leverLeftValue=0.7;leverRightValue=0.7;}
+if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']){leverLeftValue=-0.5;leverRightValue=-0.5;}
+if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']){leverLeftValue=-0.3;leverRightValue=0.5;}
+if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']){leverLeftValue=0.5;leverRightValue=-0.3;}
+// Decay levers back to center when no keyboard input
+if(!keysDown['q']&&!keysDown['Q']&&!keysDown['z']&&!keysDown['Z']&&
+!keysDown['ArrowUp']&&!keysDown['w']&&!keysDown['W']&&
+!keysDown['ArrowDown']&&!keysDown['s']&&!keysDown['S']&&
+!keysDown['ArrowLeft']&&!keysDown['a']&&!keysDown['A']&&
+!keysDown['ArrowRight']&&!keysDown['d']&&!keysDown['D']){
+if(!leverLeftTouchId) leverLeftValue *= 0.85;
+if(!leverRightTouchId) leverRightValue *= 0.85;
+}
+const lev2 = getLeversAsDxDy();
+dx = lev2.dx; dy = lev2.dy;
+// Auto throttle from lever intensity for levers mode
+throttleValue = clamp(Math.abs((leverLeftValue+leverRightValue)/2), 0.1, 1);
+} else {
+// Joystick mode (Country Clipper — easier, more responsive)
 if(joystickActive){ dx = joystickDX; dy = joystickDY; }
 if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']) dy=-1;
 if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']) dy=1;
 if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']) dx=-1;
 if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']) dx=1;
+}
 
 const mag = Math.sqrt(dx*dx+dy*dy);
 if(mag > 0){
@@ -1833,6 +1901,58 @@ updateThrottleUI();
 // Keyboard controls
 document.addEventListener('keydown',e=>{keysDown[e.key]=true});
 document.addEventListener('keyup',e=>{delete keysDown[e.key]});
+
+// Twin lever touch handling
+function setupLeverTouch(side){
+const el = $(side === 'L' ? 'lever-left' : 'lever-right');
+if(!el) return;
+const handle = $(side === 'L' ? 'lever-handle-L' : 'lever-handle-R');
+function updateLever(clientY){
+const rect = el.querySelector('.lever-track').getBoundingClientRect();
+const pct = clamp((rect.top + rect.height/2 - clientY) / (rect.height/2), -1, 1);
+if(side==='L') leverLeftValue = pct;
+else leverRightValue = pct;
+const topPct = 50 - pct * 45;
+handle.style.top = topPct + '%';
+handle.style.marginTop = '-10px';
+}
+el.addEventListener('touchstart', e=>{
+e.preventDefault(); e.stopPropagation();
+const t = e.changedTouches[0];
+if(side==='L') leverLeftTouchId = t.identifier;
+else leverRightTouchId = t.identifier;
+updateLever(t.clientY);
+},{passive:false});
+el.addEventListener('touchmove', e=>{
+e.preventDefault(); e.stopPropagation();
+const tid = side==='L' ? leverLeftTouchId : leverRightTouchId;
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === tid) updateLever(e.changedTouches[i].clientY);
+}
+},{passive:false});
+el.addEventListener('touchend', e=>{
+e.preventDefault();
+const tid = side==='L' ? leverLeftTouchId : leverRightTouchId;
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === tid){
+if(side==='L'){leverLeftTouchId=null;leverLeftValue=0;}
+else{leverRightTouchId=null;leverRightValue=0;}
+handle.style.top='50%';
+}
+}
+},{passive:false});
+}
+setupLeverTouch('L');
+setupLeverTouch('R');
+
+// Convert twin levers to dx/dy (tank-drive: both forward=straight, one forward+one back=turn)
+function getLeversAsDxDy(){
+const avg = (leverLeftValue + leverRightValue) / 2; // forward speed
+const diff = (leverRightValue - leverLeftValue); // turn rate
+// Convert to dx/dy based on current mower angle
+if(Math.abs(avg) < 0.05 && Math.abs(diff) < 0.05) return {dx:0,dy:0,turn:0};
+return {dx: diff * 0.8, dy: -avg, turn: diff};
+}
 
 // ===== ADVANCE WEEK =====
 function advanceWeek(){
