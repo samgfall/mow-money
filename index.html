@@ -146,11 +146,7 @@ font-size:.85rem;margin-top:8px;width:100%;transition:transform .1s}
 #mowing-screen .mow-hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
 padding:12px 16px;background:rgba(0,0,0,.5);color:#fff;z-index:10;font-size:.85rem;font-weight:600}
 #mow-canvas{width:100%;height:100%;display:block}
-.joystick-area{position:absolute;bottom:20px;left:20px;width:120px;height:120px;z-index:20;touch-action:none}
-.joystick-base{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);
-position:absolute}
-.joystick-knob{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.5);
-position:absolute;top:35px;left:35px;transition:none}
+/* old fixed joystick removed — see dynamic joystick CSS above */
 .mow-complete-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;
 justify-content:center;align-items:center;z-index:30;color:#fff;text-align:center;padding:20px}
 .mow-complete-overlay h2{font-size:1.8rem;margin-bottom:8px}
@@ -442,11 +438,12 @@ weather: 'clear',
 reputation: 3.0,
 totalRepJobs: 0,
 totalRepScore: 0,
-mowers: [{...MOWERS[0], owned: true, condition: 100}],
+mowers: [{...MOWERS[0], owned: true, condition: 100, health: 100}],
 mowerLoan: 3500,
 mowerLoanPayment: 200,
-trucks: 0,
-truckPayment: 0,
+ownedTrucks: [],
+playerTruck: {id:'personal',name:'Personal Vehicle',reliability:.60,gasCost:10,desc:'Your car - works for now but can only haul a push mower'},
+gasPrice: 3.50,
 insurance: 150,
 hasWebsite: false,
 websiteCost: 50,
@@ -464,7 +461,8 @@ totalWeeks: 0,
 advertisingActive: null,
 advertisingWeeksLeft: 0,
 pendingContracts: [],
-gameOver: false
+gameOver: false,
+truckPayment: 0
 };
 }
 
@@ -592,6 +590,14 @@ if(G.weather==='storm') alerts+=`<div class="alert-banner danger">&#9888; Storm 
 if(G.weather==='drought') alerts+=`<div class="alert-banner info">&#9728; Drought conditions - lawns grow slower, some customers may pause</div>`;
 if(G.season==='Winter') alerts+=`<div class="alert-banner info">&#10052; Winter - no mowing needed. Plan & upgrade for spring!</div>`;
 if(G.cash < 200) alerts+=`<div class="alert-banner danger">&#128176; Low on cash! You may need a loan.</div>`;
+// Mower health warnings
+G.mowers.forEach(m=>{
+if(m.owned && (m.health||100) <= 0) alerts+=`<div class="alert-banner danger">&#128165; ${m.name} is DESTROYED! Repair it in the shop.</div>`;
+else if(m.owned && (m.health||100) < 25) alerts+=`<div class="alert-banner warning">&#128295; ${m.name} is critically damaged (${Math.round(m.health)}%)</div>`;
+});
+// Unassigned trucks warning
+const empsNoTruck = G.employees.filter(e=>!getEmployeeTruck(e.id));
+if(empsNoTruck.length > 0) alerts+=`<div class="alert-banner warning">&#128666; ${empsNoTruck.length} employee${empsNoTruck.length>1?'s':''} without a truck assigned</div>`;
 $('alert-area').innerHTML = alerts;
 
 // Stats
@@ -602,6 +608,8 @@ $('stats-grid').innerHTML = `
 <div class="stat-card"><div class="stat-label">Weekly Revenue</div><div class="stat-value">${fmt(weekRev)}</div><div class="stat-sub">${G.contracts.length} contracts</div></div>
 <div class="stat-card"><div class="stat-label">Weekly Costs</div><div class="stat-value">${fmt(weekExp)}</div><div class="stat-sub">Est. expenses</div></div>
 <div class="stat-card"><div class="stat-label">Reputation</div><div class="stat-value">${G.reputation.toFixed(1)} &#11088;</div><div class="stat-sub">${getRepLabel(G.reputation)}</div></div>
+<div class="stat-card"><div class="stat-label">Gas Price</div><div class="stat-value">$${(G.gasPrice||3.50).toFixed(2)}</div><div class="stat-sub">per gallon</div></div>
+<div class="stat-card"><div class="stat-label">Mower Health</div><div class="stat-value">${Math.round(G.mowers.filter(m=>m.owned).reduce((best,m)=>Math.max(best,m.health||100),0))}%</div><div class="stat-sub">Best mower</div></div>
 `;
 
 // Actions
@@ -661,21 +669,25 @@ return G.contracts.reduce((s,c)=>s+c.price,0);
 
 function calcWeeklyExpenses(){
 let exp = 0;
-// Gas per yard
-G.contracts.forEach(c=>{
-const yt = YARD_TYPES.find(y=>y.type===c.type);
-exp += 5 + (yt ? yt.baseTime/15 : 3); // roughly $5-15
-});
+// Gas per yard (route-aware)
+const route = calcRouteInfo();
+exp += route.totalGas;
 // Employee wages (est 2hrs per yard)
 G.employees.forEach(e=>{
 exp += e.assignedContracts.length * 2 * e.wage;
 });
+// Truck gas costs
+(G.ownedTrucks||[]).forEach(t=>{
+if(t.assignedTo) exp += t.gasCost / 4;
+});
 // Insurance
-exp += G.insurance / 4; // weekly portion
+exp += G.insurance / 4;
 // Mower loan
 if(G.mowerLoan > 0) exp += G.mowerLoanPayment;
-// Truck payment
-if(G.truckPayment > 0) exp += G.truckPayment / 4;
+// Truck payments
+(G.ownedTrucks||[]).forEach(t=>{
+if(t.loanLeft > 0) exp += t.monthlyPayment / 4;
+});
 // Website
 if(G.hasWebsite) exp += G.websiteCost / 4;
 // Advertising
@@ -685,15 +697,52 @@ exp += calcWeeklyRevenue() * 0.05;
 return exp;
 }
 
+// ===== GAS & ROUTE HELPERS =====
+function calcContractGasCost(c){
+const yt = YARD_TYPES.find(y=>y.type===c.type);
+const baseGas = (yt ? yt.baseTime/15 : 3);
+return Math.round((baseGas * (G.gasPrice||3.50) / 3.50) * 100) / 100;
+}
+
+function calcRouteInfo(){
+if(G.contracts.length < 2) return {totalDist:0, bonus:false, totalGas:0};
+const hqX=150, hqY=150;
+let totalDist=0;
+const sorted = [...G.contracts].sort((a,b)=>{
+const da=Math.sqrt((a.mapX-hqX)**2+(a.mapY-hqY)**2);
+const db=Math.sqrt((b.mapX-hqX)**2+(b.mapY-hqY)**2);
+return da-db;
+});
+let px=hqX, py=hqY;
+sorted.forEach(c=>{
+totalDist += Math.sqrt((c.mapX-px)**2+(c.mapY-py)**2);
+px=c.mapX; py=c.mapY;
+});
+const avgDist = totalDist / G.contracts.length;
+const bonus = avgDist < 60;
+let totalGas = 0;
+G.contracts.forEach(c=>{ totalGas += calcContractGasCost(c); });
+const distMult = Math.max(0.8, Math.min(1.5, totalDist / (G.contracts.length * 80)));
+totalGas = Math.round(totalGas * distMult * 100)/100;
+if(bonus) totalGas = Math.round(totalGas * 0.8 * 100)/100;
+return {totalDist: Math.round(totalDist), bonus, totalGas, distMult};
+}
+
 // ===== CONTRACTS =====
 function renderContracts(){
 updateTopBar();
-$('contracts-count').textContent = `Your Contracts (${G.contracts.length})`;
+const route = calcRouteInfo();
+$('contracts-count').innerHTML = `Your Contracts (${G.contracts.length})
+<div style="font-size:.72rem;font-weight:400;color:var(--text-light);margin-top:2px">
+&#9981; Gas: ${fmt(route.totalGas)} est. @ $${(G.gasPrice||3.50).toFixed(2)}/gal
+${route.bonus?'<span class="route-tag bonus">Route Bonus -20%</span>':''}
+</div>`;
 let html = '';
 G.contracts.forEach(c=>{
 const mowed = G.weeklyMowed[c.id];
 const assignedEmp = G.employees.find(e=>e.assignedContracts.includes(c.id));
 const isWinter = G.season==='Winter';
+const gasCost = calcContractGasCost(c);
 html += `<div class="contract-card fade-in">
 <div class="contract-header">
 <div>
@@ -706,6 +755,7 @@ html += `<div class="contract-card fade-in">
 <span>${c.label}</span>
 <span class="contract-tag ${c.difficulty}">${c.difficulty}</span>
 <span>&#11088; ${c.satisfaction}/5</span>
+<span class="route-tag">&#9981; ~${fmt(gasCost)} gas</span>
 ${assignedEmp?`<span>&#128100; ${assignedEmp.name}</span>`:''}
 </div>
 <div class="contract-status">
@@ -782,9 +832,14 @@ if(!emp) return;
 if(emp.assignedContracts.includes(contractId)){
 emp.assignedContracts = emp.assignedContracts.filter(cid=>cid!==contractId);
 } else {
-// Check if we have enough mowers for crews
+// Check truck assignment
+const hasTruck = getEmployeeTruck(emp.id);
+if(!hasTruck){
+closeModal();
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>No Truck!</h2><p>${emp.name} needs a truck assigned before they can mow. Go to Crew to assign one.</p>`);
+return;
+}
 emp.assignedContracts.push(contractId);
-// Mark as mowed by employee
 G.weeklyMowed[contractId] = 'employee';
 }
 saveGame();
@@ -804,23 +859,35 @@ mowerHtml += `<div class="shop-item">
 <div class="shop-item-price">${fmt(m.price)}</div>
 </div>
 <div class="shop-item-stats">${m.desc} | Speed: ${m.speed}mph | Reliability: ${Math.round(m.reliability*100)}% | Efficiency: ${m.efficiency}x</div>
-${owned ? `<div class="shop-item-owned">&#9989; Owned (Condition: ${Math.round(owned.condition)}%)
-${owned.condition < 80 ? `<button class="btn-buy" style="margin-top:6px;background:var(--warning);width:auto;padding:6px 16px" ${G.cash < Math.round(m.price*0.05) ? 'disabled' : ''} onclick="repairMower('${m.id}')">Repair ${fmt(Math.round(m.price*0.05))}</button>` : ''}</div>` :
+${owned ? `<div class="shop-item-owned">&#9989; Owned (Health: ${Math.round(owned.health||100)}% | Condition: ${Math.round(owned.condition)}%)
+${(owned.health||100) < 100 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+<button class="btn-buy" style="background:var(--warning);width:auto;padding:6px 12px;font-size:.72rem" ${G.cash < Math.round(m.price*0.03) ? 'disabled' : ''} onclick="repairMowerTier('${m.id}','minor')">Minor +30% ${fmt(Math.round(m.price*0.03))}</button>
+<button class="btn-buy" style="background:var(--warning);width:auto;padding:6px 12px;font-size:.72rem" ${G.cash < Math.round(m.price*0.08) ? 'disabled' : ''} onclick="repairMowerTier('${m.id}','major')">Major +70% ${fmt(Math.round(m.price*0.08))}</button>
+<button class="btn-buy" style="background:var(--danger);width:auto;padding:6px 12px;font-size:.72rem" ${G.cash < Math.round(m.price*0.15) ? 'disabled' : ''} onclick="repairMowerTier('${m.id}','full')">Full 100% ${fmt(Math.round(m.price*0.15))}</button>
+</div>` : ''}</div>` :
 `<button class="btn-buy" ${G.cash<m.price?'disabled':''} onclick="buyMower('${m.id}')">Buy ${fmt(m.price)}</button>`}
 </div>`;
 });
 $('mower-list').innerHTML = mowerHtml;
 
 // Vehicles
-$('vehicle-list').innerHTML = `<div class="shop-item">
-<div class="shop-item-header">
-<div class="shop-item-name">Used Truck (F-150)</div>
-<div class="shop-item-price">$15,000</div>
-</div>
-<div class="shop-item-stats">Needed for hauling equipment to job sites. Required for employee crews. ${fmt(400)}/month payments.</div>
-${G.trucks > 0 ? `<div class="shop-item-owned">&#9989; Owned (${G.trucks} truck${G.trucks>1?'s':''})</div>` : ''}
-<button class="btn-buy" ${G.cash<3000?'disabled':''} onclick="buyTruck()">Buy (${fmt(3000)} down + ${fmt(400)}/mo)</button>
+let vehHtml = '';
+// Player truck
+vehHtml += `<div class="shop-item">
+<div class="shop-item-header"><div class="shop-item-name">Your Vehicle</div><div class="shop-item-price">Current</div></div>
+<div class="shop-item-stats">${G.playerTruck.name} - ${G.playerTruck.desc} | Reliability: ${Math.round(G.playerTruck.reliability*100)}%</div>
 </div>`;
+TRUCKS.forEach(t=>{
+const owned = (G.ownedTrucks||[]).filter(ot=>ot.id===t.id);
+const downPay = Math.round(t.price * 0.2);
+vehHtml += `<div class="shop-item">
+<div class="shop-item-header"><div class="shop-item-name">${t.name}</div><div class="shop-item-price">${fmt(t.price)}</div></div>
+<div class="shop-item-stats">${t.desc} | Reliability: ${Math.round(t.reliability*100)}% | Gas: ${fmt(t.gasCost)}/wk</div>
+${owned.length>0?`<div class="shop-item-owned">&#9989; Owned (${owned.length})</div>`:''}
+<button class="btn-buy" ${G.cash<downPay?'disabled':''} onclick="buyTruckType('${t.id}')">Buy (${fmt(downPay)} down + ${fmt(Math.round(t.price*0.04))}/mo)</button>
+</div>`;
+});
+$('vehicle-list').innerHTML = vehHtml;
 
 // Advertising
 $('ad-list').innerHTML = `
@@ -847,29 +914,39 @@ function buyMower(id){
 const m = MOWERS.find(m2=>m2.id===id);
 if(!m || G.cash < m.price) return;
 G.cash -= m.price;
-G.mowers.push({...m, owned:true, condition:100});
+G.mowers.push({...m, owned:true, condition:100, health:100});
 saveGame();
 renderShop();
 }
 
-function repairMower(id){
+function repairMowerTier(id, tier){
 const m = G.mowers.find(m2=>m2.id===id && m2.owned);
 if(!m) return;
-const cost = Math.round(MOWERS.find(m2=>m2.id===id).price * 0.05);
+const base = MOWERS.find(m2=>m2.id===id);
+let cost, restore;
+if(tier==='minor'){cost=Math.round(base.price*0.03);restore=30;}
+else if(tier==='major'){cost=Math.round(base.price*0.08);restore=70;}
+else{cost=Math.round(base.price*0.15);restore=100;}
 if(G.cash < cost) return;
 G.cash -= cost;
-m.condition = Math.min(100, m.condition + 30);
-saveGame();
-renderShop();
+if(tier==='full'){m.health=100;m.condition=Math.min(100,m.condition+20);}
+else{m.health=Math.min(100,(m.health||100)+restore);m.condition=Math.min(100,m.condition+Math.round(restore/3));}
+saveGame();renderShop();
 }
 
-function buyTruck(){
-if(G.cash < 3000) return;
-G.cash -= 3000;
-G.trucks++;
-G.truckPayment = 400 * G.trucks;
-saveGame();
-renderShop();
+function buyTruckType(id){
+const t = TRUCKS.find(t2=>t2.id===id);
+if(!t) return;
+const downPay = Math.round(t.price * 0.2);
+if(G.cash < downPay) return;
+G.cash -= downPay;
+if(!G.ownedTrucks) G.ownedTrucks=[];
+G.ownedTrucks.push({...t, owned:true, assignedTo:null, loanLeft:t.price-downPay, monthlyPayment:Math.round(t.price*0.04)});
+if(G.playerTruck.id==='personal' && G.ownedTrucks.length===1){
+G.playerTruck = {...t, assignedTo:'player'};
+G.ownedTrucks[G.ownedTrucks.length-1].assignedTo='player';
+}
+saveGame();renderShop();
 }
 
 function buyAd(type){
@@ -905,11 +982,46 @@ showScreen('shop');
 }
 
 // ===== EMPLOYEES =====
+function getEmployeeTruck(empId){
+if(!G.ownedTrucks) return null;
+return G.ownedTrucks.find(t=>t.assignedTo===String(empId));
+}
+
+function assignTruckToEmployee(truckIdx, empId){
+if(!G.ownedTrucks) return;
+// Unassign this truck from anyone else
+if(G.ownedTrucks[truckIdx]) G.ownedTrucks[truckIdx].assignedTo = String(empId);
+saveGame();renderEmployees();
+}
+
+function showTruckAssignModal(empId){
+const emp = G.employees.find(e=>String(e.id)===String(empId));
+if(!emp) return;
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button><h2>Assign Truck</h2>
+<p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px">for ${emp.name}</p>`;
+const trucks = G.ownedTrucks||[];
+const available = trucks.filter(t=>!t.assignedTo || t.assignedTo===String(empId));
+if(available.length===0){
+html += '<p style="text-align:center;color:var(--text-light);padding:20px">No trucks available. Buy one in the shop!</p>';
+} else {
+trucks.forEach((t,i)=>{
+const isAssigned = t.assignedTo===String(empId);
+const isTaken = t.assignedTo && t.assignedTo!==String(empId) && t.assignedTo!=='player';
+html += `<div class="assign-option" ${isTaken?'style="opacity:.5;pointer-events:none"':''} onclick="assignTruckToEmployee(${i},'${empId}');closeModal()">
+<div><div class="ao-name">${t.name}</div><div class="ao-info">Reliability: ${Math.round(t.reliability*100)}%${isTaken?' (In use)':''}</div></div>
+${isAssigned?'<span style="color:var(--success);font-weight:600">Assigned</span>':''}
+</div>`;
+});
+}
+showModal(html);
+}
+
 function renderEmployees(){
 updateTopBar();
 let html='';
 if(G.employees.length===0) html='<div style="padding:20px;text-align:center;color:var(--text-light)">No employees yet. Hire crew below!</div>';
 G.employees.forEach(e=>{
+const truck = getEmployeeTruck(e.id);
 html+=`<div class="employee-card fade-in">
 <div class="emp-header">
 <div class="emp-name">${e.name}</div>
@@ -917,16 +1029,22 @@ html+=`<div class="employee-card fade-in">
 </div>
 <div class="emp-wage">${fmt(e.wage)}/hr | Morale: ${e.morale}%</div>
 <div class="emp-assignment">${e.assignedContracts.length} yard${e.assignedContracts.length!==1?'s':''} assigned</div>
+<div style="margin-top:4px">${truck
+? `<span class="truck-badge">&#128666; ${truck.name} (${Math.round(truck.reliability*100)}%)</span>`
+: `<span class="truck-badge none">&#9888; No truck assigned</span>`}
+<button style="font-size:.72rem;padding:4px 10px;border-radius:6px;background:var(--green-pale);color:var(--green-dark);font-weight:600;margin-left:4px" onclick="showTruckAssignModal('${e.id}')">Change</button>
+</div>
 <button class="btn-fire" onclick="fireEmployee('${e.id}')">Let Go</button>
 </div>`;
 });
 $('employee-list').innerHTML=html;
 
-// Available hires
-const canHire = G.trucks > 0 || G.employees.length === 0;
+// Available hires - need a truck for each employee
+const availTrucks = (G.ownedTrucks||[]).filter(t=>!t.assignedTo || t.assignedTo==='player');
+const canHire = availTrucks.length > 0 || G.employees.length === 0;
 let hireHtml='';
 if(!canHire){
-hireHtml='<div style="padding:20px;text-align:center;color:var(--text-light)">Buy a truck first to support more crew members.</div>';
+hireHtml='<div style="padding:20px;text-align:center;color:var(--text-light)">Buy a truck first to support more crew members. Each employee needs a truck assigned.</div>';
 } else {
 // Generate 3 candidates
 const candidates = [generateEmployee(), generateEmployee(), generateEmployee()];
@@ -1037,11 +1155,23 @@ let mowState = null;
 let mowAnimFrame = null;
 let joystickActive = false;
 let joystickDX = 0, joystickDY = 0;
+let joystickTouchId = null;
+let joystickBaseX = 0, joystickBaseY = 0;
+let throttleValue = 0.5; // 0-1
+let throttleTouchId = null;
 let keysDown = {};
+let breakdownTimer = null;
 
 function startMowing(contractId){
 const c = G.contracts.find(c2=>String(c2.id)===String(contractId));
 if(!c) return;
+
+// Check if any mower is functional
+const bestFunctional = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).sort((a,b)=>b.efficiency-a.efficiency)[0];
+if(!bestFunctional){
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>No Working Mower!</h2><p>All your mowers are destroyed. Visit the shop to repair or buy a new one.</p>`);
+return;
+}
 
 const yt = YARD_TYPES.find(y=>y.type===c.type);
 const canvas = $('mow-canvas');
@@ -1103,10 +1233,13 @@ grass[r][cc2] = 0; // not grass
 let totalGrass = 0;
 for(let r=0;r<rows;r++) for(let cc=0;cc<cols;cc++) if(grass[r][cc]===1) totalGrass++;
 
-// Get best mower
-const bestMower = G.mowers.filter(m=>m.owned).sort((a,b)=>b.efficiency-a.efficiency)[0];
+// Get best functional mower
+const bestMower = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).sort((a,b)=>b.efficiency-a.efficiency)[0];
 const mowerSpeed = bestMower ? (bestMower.speed / 7) * 3 : 3; // pixels per frame at 1x
 const mowerWidth = bestMower ? (bestMower.deck / 42) * 3 : 3; // cells wide
+
+const mowerHealth = bestMower ? (bestMower.health != null ? bestMower.health : 100) : 100;
+const healthPenalty = mowerHealth < 50 ? 0.5 + (mowerHealth / 100) : 1;
 
 mowState = {
 contract: c,
@@ -1117,21 +1250,46 @@ totalGrass, cutGrass: 0,
 obstacles,
 mower: bestMower,
 mowerSpeed,
+baseMowerSpeed: mowerSpeed,
 mowerWidth: Math.max(2, Math.round(mowerWidth)),
-px: yardW / 2, py: yardH * 0.6, // player pos (in 1x coords)
-angle: 0,
+baseMowerWidth: Math.max(2, Math.round(mowerWidth)),
+px: yardW / 2, py: yardH * 0.6,
+angle: 0, drift: 0,
 timer: 0, startTime: Date.now(),
 done: false, hitCount: 0,
+mowerHealth: mowerHealth,
+healthPenalty: healthPenalty,
+damageThisRun: 0,
+brokeDown: false, breakdownEnd: 0,
+lastCollision: 0,
 particles: [],
-stripes: [] // mowing stripe direction tracker
+stripes: []
 };
 
+throttleValue = 0.5;
+$('throttle-fill').style.height = '50%';
+$('throttle-handle').style.bottom = 'calc(50% - 7px)';
 $('mow-complete').style.display='none';
+$('breakdown-overlay').style.display='none';
 $('mow-yard-name').textContent = c.customerName + ' - ' + c.label;
+updateMowHUD();
 
 // Start game loop
 if(mowAnimFrame) cancelAnimationFrame(mowAnimFrame);
+if(breakdownTimer) clearTimeout(breakdownTimer);
 mowLoop();
+}
+
+function updateMowHUD(){
+if(!mowState) return;
+const h = mowState.mowerHealth;
+const fill = $('hud-health-fill');
+const text = $('hud-health-text');
+fill.style.width = h + '%';
+fill.style.background = h > 50 ? 'var(--success)' : h > 25 ? 'var(--warning)' : 'var(--danger)';
+text.textContent = Math.round(h) + '%';
+const speedPct = Math.round(throttleValue * 100);
+$('hud-speed').innerHTML = `&#9881; ${speedPct}%${keysDown['Shift']?' BOOST':''}`;
 }
 
 function mowLoop(){
@@ -1146,6 +1304,46 @@ ctx.scale(scale, scale);
 ms.timer = (Date.now() - ms.startTime) / 1000;
 $('mow-timer').textContent = formatTime(ms.timer);
 
+// Check breakdown
+if(ms.brokeDown){
+if(Date.now() < ms.breakdownEnd){
+const secsLeft = Math.ceil((ms.breakdownEnd - Date.now())/1000);
+$('breakdown-timer').textContent = secsLeft;
+// Still draw the scene but don't move
+drawMowScene(ctx, ms);
+ctx.restore();
+mowAnimFrame = requestAnimationFrame(mowLoop);
+return;
+} else {
+ms.brokeDown = false;
+$('breakdown-overlay').style.display='none';
+}
+}
+
+// Random breakdown check (if health < 25%, chance each frame)
+if(ms.mowerHealth > 0 && ms.mowerHealth < 25 && Math.random() < 0.0005){
+ms.brokeDown = true;
+ms.breakdownEnd = Date.now() + 10000;
+$('breakdown-overlay').style.display='flex';
+drawMowScene(ctx, ms);
+ctx.restore();
+mowAnimFrame = requestAnimationFrame(mowLoop);
+return;
+}
+
+// Throttle-based speed
+const boost = keysDown['Shift'] ? 1.5 : 1;
+const speedMult = (0.3 + throttleValue * 1.4) * ms.healthPenalty * boost;
+const currentSpeed = ms.baseMowerSpeed * speedMult;
+ms.mowerSpeed = currentSpeed;
+
+// Wider mowing path at higher throttle
+const widthBonus = throttleValue > 0.7 ? Math.round((throttleValue - 0.7) * 3) : 0;
+ms.mowerWidth = ms.baseMowerWidth + widthBonus;
+
+// Drift at high speed
+const driftAmount = throttleValue > 0.7 ? (throttleValue - 0.7) * 0.15 : 0;
+
 // Move mower
 let dx = 0, dy = 0;
 if(joystickActive){ dx = joystickDX; dy = joystickDY; }
@@ -1157,38 +1355,83 @@ if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']) dx=1;
 const mag = Math.sqrt(dx*dx+dy*dy);
 if(mag > 0){
 dx/=mag; dy/=mag;
+// Apply drift
+if(driftAmount > 0){
+ms.drift += (Math.random()-0.5) * driftAmount;
+ms.drift *= 0.95;
+const perpX = -dy, perpY = dx;
+dx += perpX * ms.drift;
+dy += perpY * ms.drift;
+}
 ms.angle = Math.atan2(dy, dx);
-const nx = ms.px + dx * ms.mowerSpeed;
-const ny = ms.py + dy * ms.mowerSpeed;
+const nx = ms.px + dx * currentSpeed;
+const ny = ms.py + dy * currentSpeed;
 
 // Collision check with obstacles
-let blocked = false;
+let hitObstacle = false;
 const mowerR = ms.grassSize * ms.mowerWidth / 2;
+const now = Date.now();
 ms.obstacles.forEach(ob=>{
 const obL = ob.x * ms.grassSize;
 const obT = ob.y * ms.grassSize;
 const obR = (ob.x + ob.w) * ms.grassSize;
 const obB = (ob.y + ob.h) * ms.grassSize;
 if(nx + mowerR > obL && nx - mowerR < obR && ny + mowerR > obT && ny - mowerR < obB){
-blocked = true;
+hitObstacle = true;
 }
 });
 
-if(!blocked && nx > ms.grassSize && nx < ms.w - ms.grassSize && ny > ms.grassSize * Math.floor(ms.rows*0.1) && ny < ms.h - ms.grassSize){
+// Boundary collision (fence/house)
+const hitBoundary = nx <= ms.grassSize || nx >= ms.w - ms.grassSize ||
+ny <= ms.grassSize * Math.floor(ms.rows*0.1) || ny >= ms.h - ms.grassSize;
+
+if(hitObstacle && now - ms.lastCollision > 500){
+ms.lastCollision = now;
+const dmg = Math.round((5 + throttleValue * 10) * (1 + (currentSpeed / ms.baseMowerSpeed - 1) * 0.5));
+ms.mowerHealth = Math.max(0, ms.mowerHealth - dmg);
+ms.damageThisRun += dmg;
+ms.hitCount++;
+updateMowHUD();
+// Damage flash particles
+for(let i=0;i<5;i++) ms.particles.push({x:ms.px+rng(-8,8),y:ms.py+rng(-8,8),vx:(Math.random()-0.5)*3,vy:-Math.random()*3,life:15,size:rng(2,4),color:'#f44'});
+if(ms.mowerHealth <= 0){
+mowerDestroyed();
+return;
+}
+}
+
+if(hitBoundary && !hitObstacle && now - ms.lastCollision > 500){
+ms.lastCollision = now;
+const dmg = Math.round(10 + throttleValue * 10);
+ms.mowerHealth = Math.max(0, ms.mowerHealth - dmg);
+ms.damageThisRun += dmg;
+ms.hitCount++;
+updateMowHUD();
+for(let i=0;i<5;i++) ms.particles.push({x:ms.px+rng(-8,8),y:ms.py+rng(-8,8),vx:(Math.random()-0.5)*3,vy:-Math.random()*3,life:15,size:rng(2,4),color:'#f44'});
+if(ms.mowerHealth <= 0){
+mowerDestroyed();
+return;
+}
+}
+
+if(!hitObstacle && !hitBoundary){
 ms.px = nx;
 ms.py = ny;
 }
 
-// Cut grass under mower
-const cx = Math.floor(ms.px / ms.grassSize);
-const cy = Math.floor(ms.py / ms.grassSize);
+// Cut grass under mower (skip if mower destroyed)
+if(ms.mowerHealth > 0){
+const cx2 = Math.floor(ms.px / ms.grassSize);
+const cy2 = Math.floor(ms.py / ms.grassSize);
 const hw = Math.floor(ms.mowerWidth / 2);
-for(let r=cy-hw;r<=cy+hw;r++){
-for(let c=cx-hw;c<=cx+hw;c++){
+// Efficiency penalty when damaged
+const cutChance = ms.mowerHealth < 50 ? 0.5 + ms.mowerHealth/100 : 1;
+for(let r=cy2-hw;r<=cy2+hw;r++){
+for(let c=cx2-hw;c<=cx2+hw;c++){
 if(r>=0&&r<ms.rows&&c>=0&&c<ms.cols&&ms.grass[r][c]===1){
-ms.grass[r][c] = 2; // cut
+if(Math.random() < cutChance){
+ms.grass[r][c] = 2;
 ms.cutGrass++;
-// Spawn particles
 if(Math.random()<0.3){
 ms.particles.push({
 x:c*ms.grassSize+rng(-3,3),
@@ -1203,6 +1446,10 @@ size:rng(1,3)
 }
 }
 }
+}
+}
+
+updateMowHUD();
 
 // Update particles
 ms.particles = ms.particles.filter(p=>{
@@ -1214,7 +1461,34 @@ return p.life>0;
 const progress = ms.totalGrass > 0 ? ms.cutGrass / ms.totalGrass : 0;
 $('mow-progress').textContent = Math.round(progress*100)+'% Mowed';
 
-// === DRAW ===
+drawMowScene(ctx, ms);
+ctx.restore();
+
+// Check completion
+if(progress >= 0.95 && !ms.done){
+completeMowing();
+return;
+}
+
+mowAnimFrame = requestAnimationFrame(mowLoop);
+}
+
+function mowerDestroyed(){
+const ms = mowState;
+ms.done = true;
+if(ms.mower) ms.mower.health = 0;
+$('mow-complete').style.display='flex';
+$('mow-complete').innerHTML = `
+<h2 style="color:var(--danger)">Mower Destroyed!</h2>
+<div style="font-size:3rem;margin:12px 0">&#128165;</div>
+<div class="mow-stats">Your ${ms.mower?ms.mower.name:'mower'} is totaled.</div>
+<div class="mow-stats">You'll need to repair or buy a new one.</div>
+<div class="mow-stats" style="margin-top:8px">Coverage: ${Math.round((ms.cutGrass/ms.totalGrass)*100)}%</div>
+<button onclick="exitMowing()">Back to Jobs</button>`;
+saveGame();
+}
+
+function drawMowScene(ctx, ms){
 // Sky/ground
 ctx.fillStyle='#4a7a3a';
 ctx.fillRect(0,0,ms.w,ms.h);
@@ -1224,25 +1498,21 @@ for(let r=0;r<ms.rows;r++){
 for(let c=0;c<ms.cols;c++){
 const x=c*ms.grassSize, y=r*ms.grassSize;
 if(ms.grass[r][c]===0){
-// Not grass (house/border)
 if(r < Math.floor(ms.rows*0.1)){
-ctx.fillStyle='#b0a080'; // house
+ctx.fillStyle='#b0a080';
 } else {
-ctx.fillStyle='#8a7a5a'; // fence/border
+ctx.fillStyle='#8a7a5a';
 }
 ctx.fillRect(x,y,ms.grassSize,ms.grassSize);
 } else if(ms.grass[r][c]===1){
-// Uncut grass with slight variation
 const shade = ((r+c)%3===0)?'#3a8a2a':((r+c)%3===1)?'#45952f':'#4da035';
 ctx.fillStyle=shade;
 ctx.fillRect(x,y,ms.grassSize,ms.grassSize);
-// Grass blade hints
 if((r+c)%4===0){
 ctx.fillStyle='#2d7a1f';
 ctx.fillRect(x+2,y,1,ms.grassSize-2);
 }
 } else {
-// Cut grass - striped pattern
 const stripe = (r % 4 < 2);
 ctx.fillStyle = stripe ? '#7ab86a' : '#85c476';
 ctx.fillRect(x,y,ms.grassSize,ms.grassSize);
@@ -1256,21 +1526,17 @@ const houseBtm = Math.floor(ms.rows*0.1)*ms.grassSize;
 ctx.fillStyle='#c4a882';
 ctx.fillRect(ms.w*0.15, houseTop, ms.w*0.7, houseBtm);
 ctx.fillStyle='#8B4513';
-// Roof
 ctx.beginPath();
 ctx.moveTo(ms.w*0.1, houseBtm*0.3);
 ctx.lineTo(ms.w*0.5, houseTop+2);
 ctx.lineTo(ms.w*0.9, houseBtm*0.3);
 ctx.closePath();
 ctx.fill();
-// Door
 ctx.fillStyle='#5a3520';
 ctx.fillRect(ms.w*0.46, houseBtm*0.45, ms.w*0.08, houseBtm*0.55);
-// Windows
 ctx.fillStyle='#87CEEB';
 ctx.fillRect(ms.w*0.25, houseBtm*0.45, ms.w*0.1, houseBtm*0.3);
 ctx.fillRect(ms.w*0.65, houseBtm*0.45, ms.w*0.1, houseBtm*0.3);
-// Driveway
 ctx.fillStyle='#a0a0a0';
 ctx.fillRect(ms.w*0.42, houseBtm, ms.w*0.16, ms.grassSize*2);
 
@@ -1279,13 +1545,10 @@ ms.obstacles.forEach(ob=>{
 const x=ob.x*ms.grassSize, y=ob.y*ms.grassSize;
 const w2=ob.w*ms.grassSize, h2=ob.h*ms.grassSize;
 if(ob.type==='tree'){
-// Shadow
 ctx.fillStyle='rgba(0,0,0,0.1)';
 ctx.beginPath();ctx.ellipse(x+w2/2,y+h2*0.85,w2*0.45,h2*0.15,0,0,Math.PI*2);ctx.fill();
-// Trunk
 ctx.fillStyle='#5a3a1a';
 ctx.fillRect(x+w2*0.35,y+h2*0.35,w2*0.3,h2*0.65);
-// Canopy
 ctx.fillStyle='#2d6a1a';
 ctx.beginPath();ctx.arc(x+w2/2,y+h2*0.3,w2*0.55,0,Math.PI*2);ctx.fill();
 ctx.fillStyle='#3a8a2a';
@@ -1310,9 +1573,9 @@ ctx.beginPath();ctx.ellipse(x+w2/2,y+h2*0.4,w2*0.4,h2*0.3,0,0,Math.PI*2);ctx.fil
 });
 
 // Draw particles
-ctx.fillStyle='#6db85a';
 ms.particles.forEach(p=>{
 ctx.globalAlpha=p.life/30;
+ctx.fillStyle=p.color||'#6db85a';
 ctx.fillRect(p.x,p.y,p.size,p.size);
 });
 ctx.globalAlpha=1;
@@ -1322,44 +1585,38 @@ ctx.save();
 ctx.translate(ms.px, ms.py);
 ctx.rotate(ms.angle);
 const mowerR = ms.grassSize * ms.mowerWidth / 2;
-// Shadow
 ctx.fillStyle='rgba(0,0,0,0.15)';
 ctx.beginPath();ctx.ellipse(1,2,mowerR+2,mowerR*0.7,0,0,Math.PI*2);ctx.fill();
-// Deck (cutting area - front)
 ctx.fillStyle='#555';
 ctx.beginPath();
 ctx.roundRect(-mowerR-2, -mowerR*0.5, mowerR*0.8, mowerR*1, [3]);
 ctx.fill();
-// Body
-ctx.fillStyle='#cc3333';
+// Body color based on health
+const bodyColor = ms.mowerHealth > 50 ? '#cc3333' : ms.mowerHealth > 25 ? '#cc8833' : '#884444';
+ctx.fillStyle=bodyColor;
 ctx.beginPath();
 ctx.roundRect(-mowerR*0.4, -mowerR*0.7, mowerR*1.8, mowerR*1.4, [4]);
 ctx.fill();
-// Engine
 ctx.fillStyle='#222';
 ctx.fillRect(mowerR*0.5, -mowerR*0.5, mowerR*0.6, mowerR*1);
-// Seat
 ctx.fillStyle='#1a1a1a';
 ctx.beginPath();
 ctx.roundRect(-mowerR*0.1, -mowerR*0.35, mowerR*0.5, mowerR*0.7, [3]);
 ctx.fill();
-// Wheels
 ctx.fillStyle='#333';
 ctx.beginPath();ctx.arc(-mowerR*0.2, -mowerR*0.7, 3, 0, Math.PI*2);ctx.fill();
 ctx.beginPath();ctx.arc(-mowerR*0.2, mowerR*0.7, 3, 0, Math.PI*2);ctx.fill();
 ctx.beginPath();ctx.arc(mowerR*0.9, -mowerR*0.6, 4, 0, Math.PI*2);ctx.fill();
 ctx.beginPath();ctx.arc(mowerR*0.9, mowerR*0.6, 4, 0, Math.PI*2);ctx.fill();
-ctx.restore();
-
-ctx.restore();
-
-// Check completion
-if(progress >= 0.95 && !ms.done){
-completeMowing();
-return;
+// Damage smoke when health low
+if(ms.mowerHealth < 40){
+ctx.globalAlpha = 0.3;
+ctx.fillStyle='#888';
+const st = Date.now()/200;
+ctx.beginPath();ctx.arc(mowerR*0.6+Math.sin(st)*3, -mowerR*0.3+Math.cos(st)*2-5, 4+Math.sin(st*1.3)*2, 0, Math.PI*2);ctx.fill();
+ctx.globalAlpha = 1;
 }
-
-mowAnimFrame = requestAnimationFrame(mowLoop);
+ctx.restore();
 }
 
 function formatTime(s){
@@ -1385,15 +1642,22 @@ let stars = 3;
 if(cutPercent > 0.98) stars++;
 if(ms.hitCount === 0 && ms.timer < targetTime * 1.5) stars++;
 if(cutPercent < 0.96) stars--;
+if(ms.damageThisRun > 30) stars--;
 stars = clamp(stars, 1, 5);
 
 // Update satisfaction
 c.satisfaction = clamp(Math.round((c.satisfaction * 0.7) + (stars * 0.3)), 1, 5);
 G.weeklyMowed[c.id] = 'owner';
 
-// Gas cost
-const gasCost = 5 + (yt ? yt.baseTime / 15 : 3);
+// Gas cost (affected by throttle and route distance)
+const gasCost = calcContractGasCost(c) * (1 + (throttleValue - 0.5) * 0.5);
 G.weekGas += gasCost;
+
+// Save mower health back to game state
+if(ms.mower){
+const gMower = G.mowers.find(m=>m.id===ms.mower.id && m.owned);
+if(gMower) gMower.health = ms.mowerHealth;
+}
 
 // Track reputation
 G.totalRepJobs++;
@@ -1402,6 +1666,8 @@ G.reputation = clamp(G.totalRepScore / G.totalRepJobs, 1, 5);
 
 // Show complete overlay
 const starStr = '\u2B50'.repeat(stars) + '\u2606'.repeat(5-stars);
+const healthWarning = ms.mowerHealth < 25 ? '<div class="mow-stats" style="color:var(--danger)">&#9888; Mower critically damaged!</div>' :
+ms.mowerHealth < 50 ? '<div class="mow-stats" style="color:var(--warning)">&#9888; Mower needs repair</div>' : '';
 $('mow-complete').style.display='flex';
 $('mow-complete').innerHTML = `
 <h2>Yard Complete!</h2>
@@ -1409,6 +1675,8 @@ $('mow-complete').innerHTML = `
 <div class="mow-stats">Coverage: ${Math.round(cutPercent*100)}%</div>
 <div class="mow-stats">Time: ${formatTime(ms.timer)}</div>
 <div class="mow-stats">Gas Cost: ${fmt(gasCost)}</div>
+<div class="mow-stats">Mower Health: ${Math.round(ms.mowerHealth)}%${ms.damageThisRun>0?' (-'+ms.damageThisRun+'%)':''}</div>
+${healthWarning}
 ${timeBonus > 0 ? `<div class="mow-stats" style="color:#6db85a">Speed Bonus: +${fmt(timeBonus)}</div>` : ''}
 <button onclick="exitMowing()">Continue</button>
 `;
@@ -1423,52 +1691,143 @@ $('bottom-nav').style.display='flex';
 showScreen('contracts');
 }
 
-// Joystick controls
-const jArea = $('joystick-area');
-const jKnob = $('joystick-knob');
+// ===== DYNAMIC JOYSTICK (spawn-on-touch) =====
+const jTouchArea = $('joystick-touch-area');
+const dynBase = $('dyn-joystick-base');
+const dynKnob = $('dyn-joystick-knob');
 
-function handleJoystickStart(e){
+jTouchArea.addEventListener('touchstart', e=>{
 e.preventDefault();
+if(joystickTouchId !== null) return;
+const t = e.changedTouches[0];
+joystickTouchId = t.identifier;
 joystickActive = true;
-}
+joystickBaseX = t.clientX;
+joystickBaseY = t.clientY;
+dynBase.style.display = 'block';
+dynBase.style.left = (t.clientX - 60) + 'px';
+dynBase.style.top = (t.clientY - 60) + 'px';
+dynKnob.style.left = '35px';
+dynKnob.style.top = '35px';
+}, {passive:false});
 
-function handleJoystickMove(e){
+jTouchArea.addEventListener('touchmove', e=>{
 e.preventDefault();
-if(!joystickActive) return;
-const touch = e.touches ? e.touches[0] : e;
-const rect = jArea.getBoundingClientRect();
-const cx = rect.left + rect.width/2;
-const cy = rect.top + rect.height/2;
-const dx = touch.clientX - cx;
-const dy = touch.clientY - cy;
+for(let i=0;i<e.changedTouches.length;i++){
+const t = e.changedTouches[i];
+if(t.identifier !== joystickTouchId) continue;
+const dx = t.clientX - joystickBaseX;
+const dy = t.clientY - joystickBaseY;
 const dist = Math.sqrt(dx*dx+dy*dy);
 const maxDist = 40;
 const clampedDist = Math.min(dist, maxDist);
 const angle = Math.atan2(dy, dx);
 const nx = Math.cos(angle) * clampedDist;
 const ny = Math.sin(angle) * clampedDist;
-jKnob.style.left = (35 + nx) + 'px';
-jKnob.style.top = (35 + ny) + 'px';
+dynKnob.style.left = (35 + nx) + 'px';
+dynKnob.style.top = (35 + ny) + 'px';
 joystickDX = nx / maxDist;
 joystickDY = ny / maxDist;
 }
+}, {passive:false});
 
-function handleJoystickEnd(e){
+jTouchArea.addEventListener('touchend', e=>{
 e.preventDefault();
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === joystickTouchId){
+joystickTouchId = null;
 joystickActive = false;
 joystickDX = 0; joystickDY = 0;
-jKnob.style.left = '35px';
-jKnob.style.top = '35px';
+dynBase.style.display = 'none';
+}
+}
+}, {passive:false});
+
+// Desktop mouse fallback for joystick
+jTouchArea.addEventListener('mousedown', e=>{
+joystickActive = true;
+joystickBaseX = e.clientX;
+joystickBaseY = e.clientY;
+dynBase.style.display = 'block';
+dynBase.style.left = (e.clientX - 60) + 'px';
+dynBase.style.top = (e.clientY - 60) + 'px';
+dynKnob.style.left = '35px';
+dynKnob.style.top = '35px';
+const mm = e2=>{
+const dx = e2.clientX - joystickBaseX;
+const dy = e2.clientY - joystickBaseY;
+const dist = Math.sqrt(dx*dx+dy*dy);
+const maxDist = 40;
+const clampedDist = Math.min(dist, maxDist);
+const angle = Math.atan2(dy, dx);
+const nx = Math.cos(angle) * clampedDist;
+const ny = Math.sin(angle) * clampedDist;
+dynKnob.style.left = (35 + nx) + 'px';
+dynKnob.style.top = (35 + ny) + 'px';
+joystickDX = nx / maxDist;
+joystickDY = ny / maxDist;
+};
+const mu = ()=>{
+joystickActive = false;
+joystickDX = 0; joystickDY = 0;
+dynBase.style.display = 'none';
+document.removeEventListener('mousemove', mm);
+document.removeEventListener('mouseup', mu);
+};
+document.addEventListener('mousemove', mm);
+document.addEventListener('mouseup', mu);
+});
+
+// ===== THROTTLE SLIDER =====
+const throttleTrack = $('throttle-track');
+const throttleFill = $('throttle-fill');
+const throttleHandle = $('throttle-handle');
+
+function updateThrottleUI(){
+throttleFill.style.height = (throttleValue*100) + '%';
+throttleHandle.style.bottom = 'calc(' + (throttleValue*100) + '% - 7px)';
 }
 
-jArea.addEventListener('touchstart', handleJoystickStart, {passive:false});
-jArea.addEventListener('touchmove', handleJoystickMove, {passive:false});
-jArea.addEventListener('touchend', handleJoystickEnd, {passive:false});
-jArea.addEventListener('mousedown', e=>{handleJoystickStart(e);
-const mm=e2=>handleJoystickMove(e2);
-const mu=()=>{handleJoystickEnd({preventDefault:()=>{}});document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu)};
-document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+throttleTrack.addEventListener('touchstart', e=>{
+e.preventDefault(); e.stopPropagation();
+throttleTouchId = e.changedTouches[0].identifier;
+handleThrottleTouch(e.changedTouches[0]);
+}, {passive:false});
+
+throttleTrack.addEventListener('touchmove', e=>{
+e.preventDefault(); e.stopPropagation();
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === throttleTouchId) handleThrottleTouch(e.changedTouches[i]);
+}
+}, {passive:false});
+
+throttleTrack.addEventListener('touchend', e=>{
+for(let i=0;i<e.changedTouches.length;i++){
+if(e.changedTouches[i].identifier === throttleTouchId) throttleTouchId = null;
+}
+}, {passive:false});
+
+throttleTrack.addEventListener('mousedown', e=>{
+handleThrottleMouse(e);
+const mm = e2=>handleThrottleMouse(e2);
+const mu = ()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu)};
+document.addEventListener('mousemove',mm);
+document.addEventListener('mouseup',mu);
 });
+
+function handleThrottleTouch(t){
+const rect = throttleTrack.getBoundingClientRect();
+const y = clamp((rect.bottom - t.clientY) / rect.height, 0, 1);
+throttleValue = y;
+updateThrottleUI();
+}
+
+function handleThrottleMouse(e){
+const rect = throttleTrack.getBoundingClientRect();
+const y = clamp((rect.bottom - e.clientY) / rect.height, 0, 1);
+throttleValue = y;
+updateThrottleUI();
+}
 
 // Keyboard controls
 document.addEventListener('keydown',e=>{keysDown[e.key]=true});
@@ -1518,21 +1877,48 @@ G.totalRepScore += quality;
 });
 });
 
-// Gas for employee-mowed yards
+// Gas for employee-mowed yards (uses route system)
 G.employees.forEach(e=>{
+const truck = getEmployeeTruck(e.id);
 e.assignedContracts.forEach(cid=>{
 const contract = G.contracts.find(c2=>String(c2.id)===String(cid));
 if(contract){
-const yt = YARD_TYPES.find(y=>y.type===contract.type);
-gasCost += 5 + (yt ? yt.baseTime/15 : 3);
+gasCost += calcContractGasCost(contract);
+// Truck gas cost
+if(truck) gasCost += truck.gasCost / Math.max(1, e.assignedContracts.length);
 }
 });
+// Truck reliability check - may miss jobs
+if(truck && e.assignedContracts.length > 0){
+if(Math.random() > truck.reliability){
+const missedIdx = rng(0, e.assignedContracts.length - 1);
+const missedCid = e.assignedContracts[missedIdx];
+const missedContract = G.contracts.find(c2=>String(c2.id)===String(missedCid));
+delete G.weeklyMowed[missedCid];
+if(missedContract){
+missedContract.satisfaction = Math.max(1, missedContract.satisfaction - 1);
+G.weekEvents.push({text:`${truck.name} broke down! ${e.name} missed ${missedContract.customerName}'s yard.`,type:'bad'});
+}
+}
+}
 });
+
+// Route bonus discount on gas
+const route = calcRouteInfo();
+if(route.bonus){
+gasCost = Math.round(gasCost * 0.85 * 100)/100;
+G.weekEvents.push({text:'Route bonus! Clustered jobs saved fuel.',type:'good'});
+}
 
 // Maintenance
 maintenanceCost = revenue * 0.05;
 G.mowers.forEach(m=>{
-if(m.owned) m.condition = Math.max(0, m.condition - rng(1,3));
+if(m.owned){
+m.condition = Math.max(0, m.condition - rng(1,3));
+// Health also degrades slightly from normal wear
+if(m.health == null) m.health = 100;
+m.health = Math.max(0, m.health - rng(0,2));
+}
 });
 }
 
@@ -1548,7 +1934,19 @@ G.weekEvents.push({text:'Mower loan paid off!',type:'good'});
 }
 }
 
-let truckPay = G.truckPayment > 0 ? G.truckPayment / 4 : 0;
+// Truck loan payments
+let truckPay = 0;
+(G.ownedTrucks||[]).forEach(t=>{
+if(t.loanLeft > 0){
+const payment = Math.min(t.monthlyPayment / 4, t.loanLeft);
+truckPay += payment;
+t.loanLeft -= payment;
+if(t.loanLeft <= 0){
+t.loanLeft = 0;
+G.weekEvents.push({text:`${t.name} loan paid off!`,type:'good'});
+}
+}
+});
 let websiteCost = G.hasWebsite ? G.websiteCost / 4 : 0;
 let adCost = 0;
 if(G.advertisingActive==='Local Ads' && G.advertisingWeeksLeft > 0){
@@ -1643,6 +2041,20 @@ G.insurance = 150 + G.employees.length * 50 + G.contracts.length * 5;
 
 // Employee morale recovery
 G.employees.forEach(e=>{ e.morale = Math.min(100, e.morale + rng(2,5)); });
+
+// Gas price fluctuation ($2.50 - $5.00)
+if(!G.gasPrice) G.gasPrice = 3.50;
+const gasDelta = (Math.random() - 0.5) * 0.40;
+G.gasPrice = clamp(Math.round((G.gasPrice + gasDelta)*100)/100, 2.50, 5.00);
+
+// Mower health warnings
+G.mowers.forEach(m=>{
+if(m.owned && (m.health||100) <= 0){
+G.weekEvents.push({text:`${m.name} is destroyed! Buy a new one or repair it.`,type:'bad'});
+}else if(m.owned && (m.health||100) < 25){
+G.weekEvents.push({text:`${m.name} is critically damaged (${Math.round(m.health)}%) - could break down any time!`,type:'bad'});
+}
+});
 
 // Seasonal effects
 if(G.season === 'Winter'){
