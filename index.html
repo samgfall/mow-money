@@ -47,8 +47,8 @@ background:var(--green-dark);color:#fff;position:sticky;top:0;z-index:100;min-he
 /* BOTTOM NAV */
 .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;
 border-top:1px solid #e0e0e0;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
-.bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;
-font-size:.65rem;color:var(--text-light);background:none;gap:2px;transition:color .2s}
+.bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px;
+font-size:.6rem;color:var(--text-light);background:none;gap:1px;transition:color .2s}
 .bottom-nav button.active{color:var(--green-mid)}
 .bottom-nav button .nav-icon{font-size:1.3rem}
 
@@ -286,11 +286,70 @@ justify-content:center;align-items:center;text-align:center;padding:20px}
 #game-over-screen .btn-restart{background:#d44;color:#fff;padding:14px 48px;border-radius:var(--radius);
 font-size:1.05rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 
+/* SKILLS SCREEN */
+#skills-screen{padding-bottom:70px}
+.xp-bar-wrap{margin:0 16px 12px;background:var(--card);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow)}
+.xp-bar-label{display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;margin-bottom:6px}
+.xp-bar-track{height:10px;border-radius:5px;background:#e0e0e0;overflow:hidden}
+.xp-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#6db85a,#4a8c3f);transition:width .3s}
+.skill-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 16px 10px}
+.skill-header{display:flex;justify-content:space-between;align-items:center}
+.skill-name{font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:6px}
+.skill-level{font-size:.72rem;padding:2px 8px;border-radius:6px;font-weight:600;background:var(--green-pale);color:var(--green-dark)}
+.skill-level.maxed{background:#d4edda;color:#155724}
+.skill-desc{font-size:.78rem;color:var(--text-light);margin-top:4px}
+.skill-tiers{display:flex;gap:6px;margin-top:8px}
+.skill-tier{flex:1;padding:6px;border-radius:6px;font-size:.7rem;text-align:center;font-weight:600;border:1px solid #e0e0e0}
+.skill-tier.unlocked{background:var(--green-pale);color:var(--green-dark);border-color:var(--green-mid)}
+.skill-tier.available{background:#fff;color:var(--green-mid);border-color:var(--green-mid);cursor:pointer}
+.skill-tier.available:active{transform:scale(.97)}
+.skill-tier.locked{background:#f5f5f5;color:#aaa}
+
+/* ACHIEVEMENTS */
+.achievement-section{margin:0 16px 10px}
+.achievement-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.achievement-card{background:var(--card);border-radius:var(--radius);padding:10px;box-shadow:var(--shadow);text-align:center;font-size:.75rem}
+.achievement-card.unlocked{border:2px solid var(--green-mid);background:var(--green-pale)}
+.achievement-card.locked{opacity:.5}
+.achievement-icon{font-size:1.5rem;margin-bottom:4px}
+.achievement-name{font-weight:700;font-size:.72rem}
+.achievement-desc{font-size:.65rem;color:var(--text-light);margin-top:2px}
+
+/* TOAST */
+.toast-container{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;flex-direction:column;align-items:center;padding-top:max(12px,env(safe-area-inset-top));pointer-events:none}
+.toast{background:var(--green-dark);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:.85rem;font-weight:600;
+box-shadow:0 4px 20px rgba(0,0,0,.3);margin-bottom:8px;animation:toastIn .3s ease,toastOut .3s ease 2.7s forwards;pointer-events:auto;
+display:flex;align-items:center;gap:8px;max-width:90vw}
+@keyframes toastIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-20px)}}
+
+/* LOYALTY BADGE */
+.loyalty-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-size:.65rem;font-weight:600}
+.loyalty-badge.regular{background:#e8f5e3;color:#2d5a27}
+.loyalty-badge.vip{background:linear-gradient(135deg,#fff3cd,#ffeaa0);color:#856404;border:1px solid #ffc107}
+.contract-card.vip-contract{border:2px solid #ffc107;box-shadow:0 2px 12px rgba(255,193,7,.2)}
+
+/* MOWER UPGRADES */
+.upgrade-section{margin-top:8px;border-top:1px solid #e8e8e8;padding-top:8px}
+.upgrade-title{font-size:.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.upgrade-grid{display:flex;flex-wrap:wrap;gap:4px}
+.upgrade-btn{padding:4px 8px;border-radius:6px;font-size:.65rem;font-weight:600;border:1px solid #e0e0e0;background:#fff;color:var(--text)}
+.upgrade-btn.owned{background:var(--green-pale);color:var(--green-dark);border-color:var(--green-mid)}
+.upgrade-btn.buyable{background:#fff;color:var(--green-mid);border-color:var(--green-mid);cursor:pointer}
+.upgrade-btn.buyable:active{transform:scale(.97)}
+.upgrade-btn:disabled{opacity:.4;cursor:default}
+
+/* XP INDICATOR on dashboard */
+.xp-mini{display:flex;align-items:center;gap:6px;font-size:.72rem;color:rgba(255,255,255,.85)}
+.xp-mini-bar{width:50px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.xp-mini-fill{height:100%;border-radius:3px;background:#6db85a;transition:width .3s}
+
 /* RESPONSIVE */
 @media(min-width:600px){
 .stats-grid{grid-template-columns:repeat(4,1fr)}
 .action-cards{flex-direction:row;flex-wrap:wrap}
 .action-card{flex:1;min-width:200px}
+.achievement-grid{grid-template-columns:repeat(3,1fr)}
 }
 </style>
 </head>
@@ -358,6 +417,19 @@ font-size:1.05rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 <div class="top-bar"><div style="font-weight:600">Town Map</div><div class="cash" id="map-cash"></div></div>
 <canvas id="map-canvas"></canvas>
 </div>
+
+<!-- SKILLS & ACHIEVEMENTS -->
+<div id="skills-screen" class="screen">
+<div class="top-bar"><div style="font-weight:600">Skills & Trophies</div><div class="cash" id="skills-cash"></div></div>
+<div class="xp-bar-wrap" id="xp-bar-wrap"></div>
+<div class="section-title">Skills</div>
+<div id="skills-list"></div>
+<div class="section-title">Achievements</div>
+<div class="achievement-section"><div class="achievement-grid" id="achievement-grid"></div></div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
 
 <!-- MOWING GAME -->
 <div id="mowing-screen" class="screen">
@@ -432,6 +504,7 @@ font-size:1.05rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 <button onclick="showScreen('contracts')" data-screen="contracts"><span class="nav-icon">&#128196;</span>Jobs</button>
 <button onclick="showScreen('shop')" data-screen="shop"><span class="nav-icon">&#128722;</span>Shop</button>
 <button onclick="showScreen('employees-screen')" data-screen="employees-screen"><span class="nav-icon">&#128101;</span>Crew</button>
+<button onclick="showScreen('skills-screen')" data-screen="skills-screen"><span class="nav-icon">&#127942;</span>Skills</button>
 <button onclick="showScreen('map-screen')" data-screen="map-screen"><span class="nav-icon">&#128506;</span>Map</button>
 </div>
 
@@ -476,6 +549,41 @@ const LAST_NAMES = ['Johnson','Smith','Williams','Brown','Jones','Garcia','Mille
 const STREET_NAMES = ['Oak','Maple','Pine','Cedar','Elm','Birch','Walnut','Cherry','Spruce','Willow','Ash','Hickory','Magnolia','Dogwood','Sycamore'];
 const STREET_TYPES = ['St','Ave','Dr','Ln','Ct','Way','Blvd','Rd'];
 
+const SKILLS = [
+{id:'fuelEfficiency',name:'Fuel Efficiency',icon:'\u26FD',desc:'Reduce gas costs',levels:[{cost:50,effect:'-10% gas'},{cost:150,effect:'-20% gas'},{cost:400,effect:'-30% gas'}]},
+{id:'negotiator',name:'Negotiator',icon:'\uD83D\uDCB0',desc:'Better contract prices',levels:[{cost:75,effect:'+5% price'},{cost:200,effect:'+10% price'},{cost:500,effect:'+15% price'}]},
+{id:'equipmentExpert',name:'Equipment Expert',icon:'\uD83D\uDD27',desc:'Less mower degradation',levels:[{cost:60,effect:'-15% wear'},{cost:175,effect:'-30% wear'},{cost:450,effect:'-50% wear'}]},
+{id:'routeMaster',name:'Route Master',icon:'\uD83D\uDDFA',desc:'Better route bonuses',levels:[{cost:80,effect:'+5% route'},{cost:225,effect:'+10% route'},{cost:550,effect:'+15% route'}]},
+{id:'peoplePerson',name:'People Person',icon:'\uD83D\uDE04',desc:'Boost employee morale',levels:[{cost:50,effect:'+10 morale/wk'},{cost:150,effect:'+20 morale/wk'},{cost:400,effect:'+30 morale/wk'}]},
+{id:'greenThumb',name:'Green Thumb',icon:'\uD83C\uDF31',desc:'Better mowing quality',levels:[{cost:100,effect:'+0.1 star'},{cost:250,effect:'+0.2 star'},{cost:600,effect:'+0.3 star'}]}
+];
+
+const ACHIEVEMENTS = [
+{id:'first_cut',name:'First Cut',icon:'\u2702\uFE0F',desc:'Complete your first yard',hint:'Mow a yard',xp:25,check:g=>Object.keys(g.weeklyMowed).length>0||g.totalRepJobs>0},
+{id:'speed_demon',name:'Speed Demon',icon:'\u26A1',desc:'Complete a small yard in under 30s',hint:'Be fast!',xp:50,check:null},
+{id:'perfect_lawn',name:'Perfect Lawn',icon:'\u2B50',desc:'Get 5 stars on a yard',hint:'Get top rating',xp:50,check:null},
+{id:'money_maker',name:'Money Maker',icon:'\uD83D\uDCB5',desc:'Earn $1,000 total',hint:'Earn lots of money',xp:30,check:g=>g.totalRevenue>=1000},
+{id:'big_money',name:'Green Machine',icon:'\uD83D\uDCB0',desc:'Earn $10,000 total revenue',hint:'Earn even more',xp:100,check:g=>g.totalRevenue>=10000},
+{id:'empire_builder',name:'Empire Builder',icon:'\uD83C\uDFE2',desc:'Have 5+ employees',hint:'Build your crew',xp:75,check:g=>g.employees.length>=5},
+{id:'fleet_commander',name:'Fleet Commander',icon:'\uD83D\uDE9A',desc:'Own 3+ trucks',hint:'Expand your fleet',xp:75,check:g=>(g.ownedTrucks||[]).length>=3},
+{id:'iron_mower',name:'Iron Mower',icon:'\uD83D\uDEE1\uFE0F',desc:'Complete a yard with 0 damage',hint:'Avoid all obstacles',xp:50,check:null},
+{id:'marathon',name:'Marathon',icon:'\uD83C\uDFC3',desc:'Mow 10 yards in one week',hint:'Mow many yards',xp:60,check:g=>Object.keys(g.weeklyMowed).length>=10},
+{id:'penny_pincher',name:'Penny Pincher',icon:'\uD83D\uDCB2',desc:'End a week with 50%+ profit margin',hint:'Be frugal',xp:40,check:null},
+{id:'all_stars',name:'All Stars',icon:'\uD83C\uDF1F',desc:'Reach 4.5+ reputation',hint:'Get top reputation',xp:80,check:g=>g.reputation>=4.5},
+{id:'loyal_customer',name:'Loyal Customer',icon:'\u2764\uFE0F',desc:'Keep a customer for 10+ weeks',hint:'Retain customers',xp:60,check:g=>g.contracts.some(c=>(c.loyaltyWeeks||c.weeksActive||0)>=10)},
+{id:'storm_chaser',name:'Storm Chaser',icon:'\u26C8\uFE0F',desc:'Mow during a storm',hint:'Brave the weather',xp:40,check:null},
+{id:'debt_free',name:'Debt Free',icon:'\uD83C\uDF89',desc:'Pay off all loans',hint:'Clear your debts',xp:100,check:g=>g.mowerLoan<=0&&(g.ownedTrucks||[]).every(t=>t.loanLeft<=0)&&(g.ownedTrucks||[]).length>0},
+{id:'full_house',name:'Full House',icon:'\uD83C\uDFE0',desc:'Have 10+ contracts',hint:'Lots of jobs',xp:70,check:g=>g.contracts.length>=10}
+];
+
+const MOWER_UPGRADES = [
+{id:'engine_boost',name:'Engine Boost',icon:'\uD83D\uDE80',desc:'+15% speed',price:800},
+{id:'wide_deck',name:'Wide Deck',icon:'\u2194\uFE0F',desc:'+1 mower width',price:600},
+{id:'allterrain_tires',name:'All-Terrain Tires',icon:'\uD83D\uDEDE',desc:'-30% obstacle damage',price:500},
+{id:'air_filter',name:'Air Filter',icon:'\uD83D\uDCA8',desc:'-15% gas cost',price:400},
+{id:'reinforced_frame',name:'Reinforced Frame',icon:'\uD83D\uDEE1\uFE0F',desc:'+25% health capacity',price:700}
+];
+
 let G = null; // game state
 
 function defaultState(name) {
@@ -489,7 +597,7 @@ weather: 'clear',
 reputation: 3.0,
 totalRepJobs: 0,
 totalRepScore: 0,
-mowers: [{...MOWERS[0], owned: true, condition: 100, health: 100}],
+mowers: [{...MOWERS[0], owned: true, condition: 100, health: 100, upgrades:[]}],
 mowerLoan: 3500,
 mowerLoanPayment: 200,
 ownedTrucks: [],
@@ -515,7 +623,14 @@ pendingContracts: [],
 gameOver: false,
 truckPayment: 0,
 consecutiveNegativeWeeks: 0,
-tutorialSeen: false
+tutorialSeen: false,
+// XP & Skills
+xp: 0,
+totalXp: 0,
+skills: {fuelEfficiency:0, negotiator:0, equipmentExpert:0, routeMaster:0, peoplePerson:0, greenThumb:0},
+// Achievements
+achievements: [],
+// Customer loyalty (tracked per contract via loyaltyWeeks field)
 };
 }
 
@@ -550,6 +665,7 @@ difficulty: t.difficulty,
 baseTime: t.baseTime,
 satisfaction: 3,
 weeksActive: 0,
+loyaltyWeeks: 0,
 mapX: rng(20, 280),
 mapY: rng(20, 280)
 };
@@ -582,6 +698,7 @@ else if(id==='contracts') renderContracts();
 else if(id==='shop') renderShop();
 else if(id==='employees-screen') renderEmployees();
 else if(id==='map-screen') renderMap();
+else if(id==='skills-screen') renderSkills();
 }
 
 function showModal(html){
@@ -661,7 +778,21 @@ if(G) { G.tutorialSeen=true; saveGame(); }
 
 function loadGame(){
 const data = localStorage.getItem('lawn_tycoon_save');
-if(data){G=JSON.parse(data);$('bottom-nav').style.display='flex';showScreen('dashboard')}
+if(data){
+G=JSON.parse(data);
+// Backwards-compatible defaults for new features
+if(G.xp==null) G.xp=0;
+if(G.totalXp==null) G.totalXp=0;
+if(!G.skills) G.skills={fuelEfficiency:0,negotiator:0,equipmentExpert:0,routeMaster:0,peoplePerson:0,greenThumb:0};
+else{['fuelEfficiency','negotiator','equipmentExpert','routeMaster','peoplePerson','greenThumb'].forEach(k=>{if(G.skills[k]==null)G.skills[k]=0})}
+if(!G.achievements) G.achievements=[];
+// Add loyaltyWeeks to existing contracts
+(G.contracts||[]).forEach(c=>{if(c.loyaltyWeeks==null)c.loyaltyWeeks=c.weeksActive||0;if(!c.upgrades){}});
+(G.pendingContracts||[]).forEach(c=>{if(c.loyaltyWeeks==null)c.loyaltyWeeks=0});
+// Add upgrades array to owned mowers
+(G.mowers||[]).forEach(m=>{if(m.owned&&!m.upgrades)m.upgrades=[]});
+$('bottom-nav').style.display='flex';showScreen('dashboard');
+}
 }
 
 function saveGame(){
@@ -761,8 +892,9 @@ $('advance-btn').textContent = canAdvance ? 'Advance to Next Week \u25B6' : `Mow
 function updateTopBar(){
 $('top-cash').textContent = fmt(G.cash);
 $('top-week').textContent = `Week ${G.week} - ${G.season}`;
-$('top-rep').innerHTML = `${G.reputation.toFixed(1)} &#11088;`;
-['contracts-cash','shop-cash','emp-cash','map-cash'].forEach(id=>{
+const pl = getPlayerLevel ? getPlayerLevel() : {level:1,xpInLevel:0,xpNeeded:100};
+$('top-rep').innerHTML = `${G.reputation.toFixed(1)} &#11088; <span class="xp-mini">Lv${pl.level} <span class="xp-mini-bar"><span class="xp-mini-fill" style="width:${pl.xpInLevel/pl.xpNeeded*100}%"></span></span></span>`;
+['contracts-cash','shop-cash','emp-cash','map-cash','skills-cash'].forEach(id=>{
 const el=$(id);if(el)el.textContent=fmt(G.cash);
 });
 }
@@ -774,7 +906,7 @@ if(r>=3)return'Average';if(r>=2)return'Below Average';return'Poor';
 
 function calcWeeklyRevenue(){
 if(G.season==='Winter') return 0;
-return G.contracts.reduce((s,c)=>s+c.price,0);
+return G.contracts.reduce((s,c)=>s+getEffectivePrice(c),0);
 }
 
 function calcWeeklyExpenses(){
@@ -811,7 +943,8 @@ return exp;
 function calcContractGasCost(c){
 const yt = YARD_TYPES.find(y=>y.type===c.type);
 const baseGas = (yt ? yt.baseTime/15 : 3);
-return Math.round((baseGas * (G.gasPrice||3.50) / 3.50) * 100) / 100;
+const fuelDiscount = 1 - (G.skills ? getSkillEffect('fuelEfficiency') : 0);
+return Math.round((baseGas * (G.gasPrice||3.50) / 3.50 * fuelDiscount) * 100) / 100;
 }
 
 function calcRouteInfo(){
@@ -834,7 +967,8 @@ let totalGas = 0;
 G.contracts.forEach(c=>{ totalGas += calcContractGasCost(c); });
 const distMult = Math.max(0.8, Math.min(1.5, totalDist / (G.contracts.length * 80)));
 totalGas = Math.round(totalGas * distMult * 100)/100;
-if(bonus) totalGas = Math.round(totalGas * 0.8 * 100)/100;
+const routeDiscount = bonus ? 0.20 + (G.skills ? getSkillEffect('routeMaster') : 0) : 0;
+if(bonus) totalGas = Math.round(totalGas * (1-routeDiscount) * 100)/100;
 return {totalDist: Math.round(totalDist), bonus, totalGas, distMult};
 }
 
@@ -853,13 +987,20 @@ const mowed = G.weeklyMowed[c.id];
 const assignedEmp = G.employees.find(e=>e.assignedContracts.includes(c.id));
 const isWinter = G.season==='Winter';
 const gasCost = calcContractGasCost(c);
-html += `<div class="contract-card fade-in">
+const effPrice = getEffectivePrice(c);
+const loyaltyWks = c.loyaltyWeeks || c.weeksActive || 0;
+const vip = isVIP(c);
+const loyal = isLoyal(c);
+const loyaltyBadge = vip ? '<span class="loyalty-badge vip">\uD83D\uDC51 VIP '+loyaltyWks+'wk</span>' :
+loyal ? '<span class="loyalty-badge regular">\u2764\uFE0F Loyal '+loyaltyWks+'wk</span>' :
+loyaltyWks > 0 ? '<span style="font-size:.65rem;color:var(--text-light)">Customer for '+loyaltyWks+' wk</span>' : '';
+html += `<div class="contract-card${vip?' vip-contract':''} fade-in">
 <div class="contract-header">
 <div>
-<div class="contract-name">${c.customerName}</div>
+<div class="contract-name">${c.customerName} ${loyaltyBadge}</div>
 <div style="font-size:.75rem;color:var(--text-light)">${c.address}</div>
 </div>
-<div class="contract-price">${fmt(c.price)}/wk</div>
+<div class="contract-price">${fmt(effPrice)}/wk${effPrice>c.price?'<div style="font-size:.6rem;color:var(--text-light);text-decoration:line-through">'+fmt(c.price)+'</div>':''}</div>
 </div>
 <div class="contract-details">
 <span>${c.label}</span>
@@ -974,7 +1115,13 @@ ${(owned.health||100) < 100 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;m
 <button class="btn-buy" style="background:var(--warning);width:auto;padding:6px 12px;font-size:.72rem" ${G.cash < Math.round(m.price*0.03) ? 'disabled' : ''} onclick="repairMowerTier('${m.id}','minor')">Minor +30% ${fmt(Math.round(m.price*0.03))}</button>
 <button class="btn-buy" style="background:var(--warning);width:auto;padding:6px 12px;font-size:.72rem" ${G.cash < Math.round(m.price*0.08) ? 'disabled' : ''} onclick="repairMowerTier('${m.id}','major')">Major +70% ${fmt(Math.round(m.price*0.08))}</button>
 <button class="btn-buy" style="background:var(--danger);width:auto;padding:6px 12px;font-size:.72rem" ${G.cash < Math.round(m.price*0.15) ? 'disabled' : ''} onclick="repairMowerTier('${m.id}','full')">Full 100% ${fmt(Math.round(m.price*0.15))}</button>
-</div>` : ''}</div>` :
+</div>` : ''}
+<div class="upgrade-section"><div class="upgrade-title">Upgrades</div><div class="upgrade-grid">${MOWER_UPGRADES.map(u=>{
+const has=(owned.upgrades||[]).includes(u.id);
+const canBuy=!has&&G.cash>=u.price;
+return `<button class="upgrade-btn ${has?'owned':canBuy?'buyable':''}" ${!has&&canBuy?`onclick="buyMowerUpgrade('${m.id}','${u.id}')"`:''} ${!has&&!canBuy?'disabled':''}>${has?'\u2705 ':''}${u.icon} ${u.name}${has?'':' '+fmt(u.price)}</button>`;
+}).join('')}</div></div>
+</div>` :
 `<button class="btn-buy" ${G.cash<m.price?'disabled':''} onclick="buyMower('${m.id}')">Buy ${fmt(m.price)}</button>`}
 </div>`;
 });
@@ -1024,7 +1171,7 @@ function buyMower(id){
 const m = MOWERS.find(m2=>m2.id===id);
 if(!m || G.cash < m.price) return;
 G.cash -= m.price;
-G.mowers.push({...m, owned:true, condition:100, health:100});
+G.mowers.push({...m, owned:true, condition:100, health:100, upgrades:[]});
 saveGame();
 renderShop();
 }
@@ -1368,10 +1515,14 @@ for(let r=0;r<rows;r++) for(let cc=0;cc<cols;cc++) if(grass[r][cc]===1) totalGra
 
 // Get best functional mower
 const bestMower = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).sort((a,b)=>b.efficiency-a.efficiency)[0];
-const mowerSpeed = bestMower ? (bestMower.speed / 7) * 3 : 3; // pixels per frame at 1x
-const mowerWidth = bestMower ? (bestMower.deck / 42) * 3 : 3; // cells wide
+const speedBoost = 1 + getMowerUpgradeEffect(bestMower, 'speed');
+const widthBoost = getMowerUpgradeEffect(bestMower, 'width');
+const healthBoost = 1 + getMowerUpgradeEffect(bestMower, 'health');
+const mowerSpeed = bestMower ? (bestMower.speed / 7) * 3 * speedBoost : 3;
+const mowerWidth = bestMower ? (bestMower.deck / 42) * 3 + widthBoost : 3;
 
-const mowerHealth = bestMower ? (bestMower.health != null ? bestMower.health : 100) : 100;
+const rawHealth = bestMower ? (bestMower.health != null ? bestMower.health : 100) : 100;
+const mowerHealth = Math.min(100 * healthBoost, rawHealth * healthBoost);
 const healthPenalty = mowerHealth < 50 ? 0.5 + (mowerHealth / 100) : 1;
 
 mowState = {
@@ -1560,7 +1711,9 @@ ny <= ms.grassSize * Math.floor(ms.rows*0.1) || ny >= ms.h - ms.grassSize;
 
 if(hitObstacle && now - ms.lastCollision > 500){
 ms.lastCollision = now;
-const dmg = Math.max(0.2, Math.round(10*(0.3 + throttleValue * 0.7) * (1 + (currentSpeed / ms.baseMowerSpeed - 1) * 0.3))/10);
+const tireReduction = 1 - getMowerUpgradeEffect(ms.mower, 'damage');
+const skillReduction = 1 - getSkillEffect('equipmentExpert');
+const dmg = Math.max(0.1, Math.round(10*(0.3 + throttleValue * 0.7) * (1 + (currentSpeed / ms.baseMowerSpeed - 1) * 0.3) * tireReduction * skillReduction)/10);
 ms.mowerHealth = Math.max(0, ms.mowerHealth - dmg);
 ms.damageThisRun += dmg;
 ms.hitCount++;
@@ -1575,7 +1728,9 @@ return;
 
 if(hitBoundary && !hitObstacle && now - ms.lastCollision > 500){
 ms.lastCollision = now;
-const dmg = Math.max(0.3, Math.round(10*(0.5 + throttleValue * 0.5))/10);
+const bTireReduction = 1 - getMowerUpgradeEffect(ms.mower, 'damage');
+const bSkillReduction = 1 - getSkillEffect('equipmentExpert');
+const dmg = Math.max(0.1, Math.round(10*(0.5 + throttleValue * 0.5) * bTireReduction * bSkillReduction)/10);
 ms.mowerHealth = Math.max(0, ms.mowerHealth - dmg);
 ms.damageThisRun += dmg;
 ms.hitCount++;
@@ -1822,26 +1977,43 @@ const efficiency = ms.mower ? ms.mower.efficiency : 1;
 const targetTime = baseTime / efficiency;
 const timeBonus = ms.timer < targetTime ? Math.round((targetTime - ms.timer) * 0.5) : 0;
 
-// Stars rating
+// Stars rating (+ Green Thumb skill bonus)
 let stars = 3;
 if(cutPercent > 0.98) stars++;
 if(ms.hitCount === 0 && ms.timer < targetTime * 1.5) stars++;
 if(cutPercent < 0.96) stars--;
 if(ms.damageThisRun > 15) stars--;
 stars = clamp(stars, 1, 5);
+const greenBonus = getSkillEffect('greenThumb');
+const effectiveStars = Math.min(5, stars + greenBonus);
 
 // Update satisfaction
-c.satisfaction = clamp(Math.round((c.satisfaction * 0.7) + (stars * 0.3)), 1, 5);
+c.satisfaction = clamp(Math.round((c.satisfaction * 0.7) + (effectiveStars * 0.3)), 1, 5);
 G.weeklyMowed[c.id] = 'owner';
 
-// Gas cost (affected by throttle and route distance)
-const gasCost = calcContractGasCost(c) * (1 + (throttleValue - 0.5) * 0.5);
+// XP from mowing
+const mowXP = Math.round(stars * 8 + cutPercent * 10);
+addXP(mowXP, c.customerName);
+
+// Achievement checks
+unlockAchievement('first_cut');
+if(stars >= 5) unlockAchievement('perfect_lawn');
+if(ms.damageThisRun === 0) unlockAchievement('iron_mower');
+if(yt && yt.type === 'small' && ms.timer < 30) unlockAchievement('speed_demon');
+checkAchievements();
+
+// Gas cost (affected by throttle, route distance, air filter upgrade)
+const airFilterDiscount = 1 - getMowerUpgradeEffect(ms.mower, 'gas');
+const gasCost = calcContractGasCost(c) * (1 + (throttleValue - 0.5) * 0.5) * airFilterDiscount;
 G.weekGas += gasCost;
 
-// Save mower health back to game state
+// Save mower health back to game state (remove upgrade boost)
 if(ms.mower){
 const gMower = G.mowers.find(m=>m.id===ms.mower.id && m.owned);
-if(gMower) gMower.health = ms.mowerHealth;
+if(gMower){
+const hBoost = 1 + getMowerUpgradeEffect(gMower, 'health');
+gMower.health = Math.min(100, ms.mowerHealth / hBoost);
+}
 }
 
 // Track reputation
@@ -2105,8 +2277,10 @@ if(G.season !== 'Winter'){
 // Revenue from mowed yards
 G.contracts.forEach(c=>{
 if(G.weeklyMowed[c.id]){
-revenue += c.price;
+revenue += getEffectivePrice(c);
 c.weeksActive++;
+if(c.loyaltyWeeks==null) c.loyaltyWeeks=0;
+c.loyaltyWeeks++;
 }
 });
 
@@ -2133,7 +2307,8 @@ G.totalRepJobs++;
 G.totalRepScore += quality;
 // Mower wear from employee — lower skill = more damage
 const diffMult = contract.difficulty==='hard'?1.5:contract.difficulty==='moderate'?1:0.7;
-const mowerDmg = Math.round(10 * (1.2 - skill) * diffMult) / 10;
+const equipExpert = 1 - getSkillEffect('equipmentExpert');
+const mowerDmg = Math.round(10 * (1.2 - skill) * diffMult * equipExpert) / 10;
 // Apply to the employee's assigned mower (first owned mower for now)
 const empMower = G.mowers.find(m=>m.owned && (m.health||100) > 0);
 if(empMower) empMower.health = Math.max(0, (empMower.health||100) - mowerDmg);
@@ -2175,12 +2350,12 @@ G.weekEvents.push({text:'Route bonus! Clustered jobs saved fuel.',type:'good'});
 
 // Maintenance
 maintenanceCost = revenue * 0.05;
+const eqExpertMult = 1 - getSkillEffect('equipmentExpert');
 G.mowers.forEach(m=>{
 if(m.owned){
-m.condition = Math.max(0, m.condition - rng(1,3));
-// Health also degrades slightly from normal wear
+m.condition = Math.max(0, m.condition - Math.round(rng(1,3) * eqExpertMult));
 if(m.health == null) m.health = 100;
-m.health = Math.max(0, m.health - rng(0,2));
+m.health = Math.max(0, m.health - Math.round(rng(0,2) * eqExpertMult));
 }
 });
 }
@@ -2262,12 +2437,16 @@ G.weekEvents.push({text:`${e.name} called in sick this week.`,type:'bad'});
 }
 });
 
-// Referrals from happy customers
+// Referrals from happy customers (VIP & loyal refer more)
 G.contracts.forEach(c=>{
-if(c.satisfaction >= 4 && Math.random()<0.15){
+let referChance = 0.15;
+const loyalWk = c.loyaltyWeeks||c.weeksActive||0;
+if(c.satisfaction >= 4 && loyalWk >= 6) referChance = 0.25;
+if(isVIP(c)) referChance = 0.30;
+if(c.satisfaction >= 4 && Math.random()<referChance){
 const nc = generateContract();
 G.pendingContracts.push(nc);
-G.weekEvents.push({text:`${c.customerName} referred a friend! New lead available.`,type:'good'});
+G.weekEvents.push({text:`${c.customerName}${isVIP(c)?' (VIP)':''} referred a friend! New lead available.`,type:'good'});
 }
 });
 
@@ -2316,6 +2495,23 @@ saveGame();
 return;
 }
 
+// XP from completing the week
+const mowedCount = Object.keys(G.weeklyMowed).length;
+if(mowedCount > 0){
+const weekXP = mowedCount * 10 + Math.round(revenue / 50);
+addXP(weekXP, 'Week ' + G.week + ' complete');
+}
+// Check penny pincher achievement
+if(revenue > 0 && net > revenue * 0.5){
+unlockAchievement('penny_pincher');
+}
+// Check storm chaser
+if(G.weather === 'storm' && mowedCount > 0){
+unlockAchievement('storm_chaser');
+}
+// Check general achievements
+checkAchievements();
+
 // Advance week
 G.week++;
 G.season = getSeason(G.week);
@@ -2325,8 +2521,9 @@ G.weeklyMowed = {};
 // Insurance grows with company
 G.insurance = 150 + G.employees.length * 50 + G.contracts.length * 5;
 
-// Employee morale recovery
-G.employees.forEach(e=>{ e.morale = Math.min(100, e.morale + rng(2,5)); });
+// Employee morale recovery (+ People Person skill)
+const moraleBoost = getSkillEffect('peoplePerson');
+G.employees.forEach(e=>{ e.morale = Math.min(100, e.morale + rng(2,5) + moraleBoost); });
 
 // Gas price fluctuation ($2.50 - $5.00)
 if(!G.gasPrice) G.gasPrice = 3.50;
@@ -2436,6 +2633,171 @@ canvas.width = w*2; canvas.height = h*2;
 canvas.style.width = w+'px'; canvas.style.height = h+'px';
 }
 });
+
+// ===== SKILLS & XP SYSTEM =====
+function xpForLevel(n){return n*100+50} // XP needed to go from level n to n+1 in a pseudo-level system
+function getPlayerLevel(){
+let lvl=1,xpNeeded=100;
+let xpLeft=G.totalXp;
+while(xpLeft>=xpNeeded){xpLeft-=xpNeeded;lvl++;xpNeeded=lvl*100}
+return {level:lvl,xpInLevel:xpLeft,xpNeeded:xpNeeded};
+}
+
+function addXP(amount, reason){
+if(!G||amount<=0) return;
+G.xp += amount;
+G.totalXp += amount;
+showToast(`+${amount} XP` + (reason ? ' - ' + reason : ''), '\u2B50');
+saveGame();
+}
+
+function getSkillEffect(skillId){
+const lvl = G.skills[skillId] || 0;
+if(skillId==='fuelEfficiency') return [0, 0.10, 0.20, 0.30][lvl];
+if(skillId==='negotiator') return [0, 0.05, 0.10, 0.15][lvl];
+if(skillId==='equipmentExpert') return [0, 0.15, 0.30, 0.50][lvl];
+if(skillId==='routeMaster') return [0, 0.05, 0.10, 0.15][lvl];
+if(skillId==='peoplePerson') return [0, 10, 20, 30][lvl];
+if(skillId==='greenThumb') return [0, 0.1, 0.2, 0.3][lvl];
+return 0;
+}
+
+function unlockSkill(skillId, tier){
+const skill = SKILLS.find(s=>s.id===skillId);
+if(!skill) return;
+const currentLvl = G.skills[skillId] || 0;
+if(tier !== currentLvl + 1) return; // must unlock in order
+if(tier < 1 || tier > 3) return;
+const cost = skill.levels[tier-1].cost;
+if(G.xp < cost) return;
+G.xp -= cost;
+G.skills[skillId] = tier;
+showToast(`${skill.name} Level ${tier} unlocked!`, skill.icon);
+saveGame();
+renderSkills();
+}
+
+function renderSkills(){
+updateTopBar();
+const pl = getPlayerLevel();
+$('xp-bar-wrap').innerHTML = `
+<div class="xp-bar-label"><span>\u2B50 Level ${pl.level}</span><span>${G.xp} XP available</span></div>
+<div class="xp-bar-track"><div class="xp-bar-fill" style="width:${(pl.xpInLevel/pl.xpNeeded*100)}%"></div></div>
+<div style="font-size:.65rem;color:var(--text-light);margin-top:4px">Total XP: ${G.totalXp} | Next level: ${pl.xpNeeded - pl.xpInLevel} XP</div>`;
+
+let html = '';
+SKILLS.forEach(s=>{
+const lvl = G.skills[s.id] || 0;
+html += `<div class="skill-card"><div class="skill-header">
+<div class="skill-name">${s.icon} ${s.name}</div>
+<span class="skill-level ${lvl===3?'maxed':''}">Lv ${lvl}/3${lvl===3?' MAX':''}</span>
+</div><div class="skill-desc">${s.desc}</div><div class="skill-tiers">`;
+for(let t=0;t<3;t++){
+const tierLvl = t+1;
+const isUnlocked = lvl >= tierLvl;
+const isNext = lvl === t;
+const canAfford = G.xp >= s.levels[t].cost;
+let cls = 'locked';
+if(isUnlocked) cls='unlocked';
+else if(isNext && canAfford) cls='available';
+else if(isNext) cls='locked';
+html += `<div class="skill-tier ${cls}" ${cls==='available'?`onclick="unlockSkill('${s.id}',${tierLvl})"`:''}>
+${isUnlocked?'\u2705 ':''}<div style="font-weight:700">${s.levels[t].effect}</div>
+${isUnlocked?'':'<div>'+s.levels[t].cost+' XP</div>'}
+</div>`;
+}
+html += `</div></div>`;
+});
+$('skills-list').innerHTML = html;
+
+// Achievements
+let ahtml = '';
+ACHIEVEMENTS.forEach(a=>{
+const unlocked = G.achievements.includes(a.id);
+ahtml += `<div class="achievement-card ${unlocked?'unlocked':'locked'}">
+<div class="achievement-icon">${a.icon}</div>
+<div class="achievement-name">${a.name}</div>
+<div class="achievement-desc">${unlocked?a.desc:a.hint||a.desc}</div>
+${unlocked?'<div style="font-size:.6rem;color:var(--success);margin-top:2px">+'+a.xp+' XP</div>':''}
+</div>`;
+});
+$('achievement-grid').innerHTML = ahtml;
+}
+
+// ===== ACHIEVEMENTS =====
+function checkAchievements(){
+if(!G) return;
+ACHIEVEMENTS.forEach(a=>{
+if(G.achievements.includes(a.id)) return;
+if(a.check && a.check(G)){
+unlockAchievement(a.id);
+}
+});
+}
+
+function unlockAchievement(id){
+if(!G || G.achievements.includes(id)) return;
+const a = ACHIEVEMENTS.find(a2=>a2.id===id);
+if(!a) return;
+G.achievements.push(id);
+showToast(`Achievement: ${a.name}!`, a.icon);
+addXP(a.xp, a.name);
+saveGame();
+}
+
+function showToast(msg, icon){
+const container = $('toast-container');
+if(!container) return;
+const toast = document.createElement('div');
+toast.className = 'toast';
+toast.innerHTML = `${icon||''} ${msg}`;
+container.appendChild(toast);
+setTimeout(()=>{if(toast.parentNode)toast.parentNode.removeChild(toast)},3000);
+}
+
+// ===== EQUIPMENT UPGRADES =====
+function buyMowerUpgrade(mowerId, upgradeId){
+const m = G.mowers.find(m2=>m2.id===mowerId && m2.owned);
+if(!m) return;
+const upg = MOWER_UPGRADES.find(u=>u.id===upgradeId);
+if(!upg || G.cash < upg.price) return;
+if(!m.upgrades) m.upgrades = [];
+if(m.upgrades.includes(upgradeId)) return;
+G.cash -= upg.price;
+m.upgrades.push(upgradeId);
+showToast(`${upg.name} installed on ${m.name}!`, upg.icon);
+saveGame();
+renderShop();
+}
+
+function getMowerUpgradeEffect(mower, effectType){
+if(!mower || !mower.upgrades) return 0;
+if(effectType==='speed') return mower.upgrades.includes('engine_boost') ? 0.15 : 0;
+if(effectType==='width') return mower.upgrades.includes('wide_deck') ? 1 : 0;
+if(effectType==='damage') return mower.upgrades.includes('allterrain_tires') ? 0.30 : 0;
+if(effectType==='gas') return mower.upgrades.includes('air_filter') ? 0.15 : 0;
+if(effectType==='health') return mower.upgrades.includes('reinforced_frame') ? 0.25 : 0;
+return 0;
+}
+
+// ===== CUSTOMER LOYALTY =====
+function getContractLoyaltyBonus(c){
+const weeks = c.loyaltyWeeks || c.weeksActive || 0;
+if(weeks >= 8) return 0.20; // VIP
+if(weeks >= 4) return 0.10; // Loyal
+return 0;
+}
+function isVIP(c){return (c.loyaltyWeeks||c.weeksActive||0)>=8}
+function isLoyal(c){return (c.loyaltyWeeks||c.weeksActive||0)>=4}
+
+function getEffectivePrice(c){
+let price = c.price;
+// Loyalty bonus
+price *= (1 + getContractLoyaltyBonus(c));
+// Negotiator skill
+price *= (1 + getSkillEffect('negotiator'));
+return Math.round(price);
+}
 
 </script>
 </body>
