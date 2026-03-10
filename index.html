@@ -503,7 +503,7 @@ mapY: rng(20, 280)
 }
 
 function generateEmployee(){
-const levels = [{level:'Rookie',wage:15},{level:'Experienced',wage:20},{level:'Expert',wage:25}];
+const levels = [{level:'Rookie',wage:18,skill:0.6},{level:'Experienced',wage:26,skill:0.8},{level:'Expert',wage:35,skill:0.95}];
 const w = Math.random();
 const l = w < 0.5 ? levels[0] : w < 0.85 ? levels[1] : levels[2];
 return {
@@ -511,6 +511,7 @@ id: Date.now() + Math.random(),
 name: genName(),
 level: l.level,
 wage: l.wage,
+skill: l.skill,
 assignedContracts: [],
 morale: 80 + rng(0,20)
 };
@@ -1027,7 +1028,7 @@ html+=`<div class="employee-card fade-in">
 <div class="emp-name">${e.name}</div>
 <span class="emp-level ${e.level.toLowerCase()}">${e.level}</span>
 </div>
-<div class="emp-wage">${fmt(e.wage)}/hr | Morale: ${e.morale}%</div>
+<div class="emp-wage">${fmt(e.wage)}/hr | Skill: ${Math.round((e.skill||0.7)*100)}% | Morale: ${e.morale}%</div>
 <div class="emp-assignment">${e.assignedContracts.length} yard${e.assignedContracts.length!==1?'s':''} assigned</div>
 <div style="margin-top:4px">${truck
 ? `<span class="truck-badge">&#128666; ${truck.name} (${Math.round(truck.reliability*100)}%)</span>`
@@ -1387,13 +1388,13 @@ ny <= ms.grassSize * Math.floor(ms.rows*0.1) || ny >= ms.h - ms.grassSize;
 
 if(hitObstacle && now - ms.lastCollision > 500){
 ms.lastCollision = now;
-const dmg = Math.round((5 + throttleValue * 10) * (1 + (currentSpeed / ms.baseMowerSpeed - 1) * 0.5));
+const dmg = Math.max(0.2, Math.round(10*(0.3 + throttleValue * 0.7) * (1 + (currentSpeed / ms.baseMowerSpeed - 1) * 0.3))/10);
 ms.mowerHealth = Math.max(0, ms.mowerHealth - dmg);
 ms.damageThisRun += dmg;
 ms.hitCount++;
 updateMowHUD();
 // Damage flash particles
-for(let i=0;i<5;i++) ms.particles.push({x:ms.px+rng(-8,8),y:ms.py+rng(-8,8),vx:(Math.random()-0.5)*3,vy:-Math.random()*3,life:15,size:rng(2,4),color:'#f44'});
+for(let i=0;i<3;i++) ms.particles.push({x:ms.px+rng(-8,8),y:ms.py+rng(-8,8),vx:(Math.random()-0.5)*3,vy:-Math.random()*3,life:15,size:rng(2,4),color:'#f44'});
 if(ms.mowerHealth <= 0){
 mowerDestroyed();
 return;
@@ -1402,7 +1403,7 @@ return;
 
 if(hitBoundary && !hitObstacle && now - ms.lastCollision > 500){
 ms.lastCollision = now;
-const dmg = Math.round(10 + throttleValue * 10);
+const dmg = Math.max(0.3, Math.round(10*(0.5 + throttleValue * 0.5))/10);
 ms.mowerHealth = Math.max(0, ms.mowerHealth - dmg);
 ms.damageThisRun += dmg;
 ms.hitCount++;
@@ -1642,7 +1643,7 @@ let stars = 3;
 if(cutPercent > 0.98) stars++;
 if(ms.hitCount === 0 && ms.timer < targetTime * 1.5) stars++;
 if(cutPercent < 0.96) stars--;
-if(ms.damageThisRun > 30) stars--;
+if(ms.damageThisRun > 15) stars--;
 stars = clamp(stars, 1, 5);
 
 // Update satisfaction
@@ -1861,11 +1862,12 @@ const hours = e.assignedContracts.length * hoursPerYard;
 const wage = hours * e.wage;
 wagesCost += wage;
 
-// Employee quality check
+// Employee quality check + mower wear from skill
 e.assignedContracts.forEach(cid=>{
 const contract = G.contracts.find(c2=>String(c2.id)===String(cid));
 if(!contract) return;
 let quality = 3;
+const skill = e.skill || 0.7;
 if(e.level==='Expert') quality = rng(4,5);
 else if(e.level==='Experienced') quality = rng(3,5);
 else quality = rng(2,4);
@@ -1874,6 +1876,12 @@ if(e.morale < 50) quality = Math.max(1, quality-1);
 contract.satisfaction = clamp(Math.round((contract.satisfaction + quality)/2),1,5);
 G.totalRepJobs++;
 G.totalRepScore += quality;
+// Mower wear from employee — lower skill = more damage
+const diffMult = contract.difficulty==='hard'?1.5:contract.difficulty==='moderate'?1:0.7;
+const mowerDmg = Math.round(10 * (1.2 - skill) * diffMult) / 10;
+// Apply to the employee's assigned mower (first owned mower for now)
+const empMower = G.mowers.find(m=>m.owned && (m.health||100) > 0);
+if(empMower) empMower.health = Math.max(0, (empMower.health||100) - mowerDmg);
 });
 });
 
