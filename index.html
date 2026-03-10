@@ -206,13 +206,15 @@ position:absolute;pointer-events:none;display:none}
 position:absolute;top:35px;left:35px;pointer-events:none}
 
 /* THROTTLE SLIDER */
-/* Twin Levers (zero-turn style) */
-.twin-levers{position:absolute;bottom:max(40px, env(safe-area-inset-bottom));left:0;right:0;display:flex;justify-content:space-between;padding:0 30px;z-index:20;pointer-events:none}
-.lever-zone{width:60px;height:200px;display:flex;flex-direction:column;align-items:center;pointer-events:auto;touch-action:none}
-.lever-track{width:12px;height:160px;border-radius:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);position:relative}
-.lever-handle{width:40px;height:20px;border-radius:6px;background:rgba(255,255,255,.7);position:absolute;left:50%;transform:translateX(-50%);top:50%;margin-top:-10px;
-box-shadow:0 2px 6px rgba(0,0,0,.3);transition:top 0.05s}
-.lever-label{color:rgba(255,255,255,.7);font-size:.7rem;font-weight:700;margin-top:6px;text-transform:uppercase}
+/* Twin Levers (zero-turn style) — on outer edges */
+.twin-levers{position:absolute;top:0;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0;z-index:20;pointer-events:none}
+.lever-zone{width:70px;height:240px;display:flex;flex-direction:column;align-items:center;pointer-events:auto;touch-action:none;
+background:rgba(0,0,0,.25);border-radius:0 14px 14px 0;backdrop-filter:blur(4px);padding:10px 8px}
+.lever-zone.lever-right{border-radius:14px 0 0 14px}
+.lever-track{width:12px;height:180px;border-radius:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);position:relative;flex-shrink:0}
+.lever-handle{width:48px;height:24px;border-radius:8px;background:rgba(255,255,255,.8);position:absolute;left:50%;transform:translateX(-50%);top:50%;margin-top:-12px;
+box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.lever-label{color:rgba(255,255,255,.8);font-size:.7rem;font-weight:700;margin-top:8px;text-transform:uppercase}
 .throttle-area{position:absolute;bottom:80px;right:16px;width:44px;height:180px;z-index:20;touch-action:none;
 display:flex;flex-direction:column;align-items:center}
 .throttle-track{width:8px;height:140px;border-radius:4px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
@@ -1295,7 +1297,7 @@ baseMowerSpeed: mowerSpeed,
 mowerWidth: Math.max(2, Math.round(mowerWidth)),
 baseMowerWidth: Math.max(2, Math.round(mowerWidth)),
 px: yardW / 2, py: yardH * 0.6,
-angle: 0, drift: 0,
+angle: -Math.PI/2, drift: 0, // start facing "up" into the yard
 timer: 0, startTime: Date.now(),
 done: false, hitCount: 0,
 mowerHealth: mowerHealth,
@@ -1389,31 +1391,31 @@ const driftAmount = throttleValue > 0.7 ? (throttleValue - 0.7) * 0.15 : 0;
 // Move mower — twin levers (standard zero-turn) or joystick (Country Clipper)
 let dx = 0, dy = 0;
 if(controlMode === 'levers'){
-const lev = getLeversAsDxDy();
-dx = lev.dx; dy = lev.dy;
-// Keyboard: Q/E or Z/C for individual levers, WASD still works as shortcut
-if(keysDown['q']||keysDown['Q']) leverLeftValue = Math.min(1, leverLeftValue + 0.05);
-if(keysDown['e']||keysDown['E']) leverRightValue = Math.min(1, leverRightValue + 0.05);
-if(keysDown['z']||keysDown['Z']) leverLeftValue = Math.max(-1, leverLeftValue - 0.05);
-if(keysDown['c']||keysDown['C']) leverRightValue = Math.max(-1, leverRightValue - 0.05);
-// WASD as shortcut (both levers together)
-if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']){leverLeftValue=0.7;leverRightValue=0.7;}
-if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']){leverLeftValue=-0.5;leverRightValue=-0.5;}
-if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']){leverLeftValue=-0.3;leverRightValue=0.5;}
-if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']){leverLeftValue=0.5;leverRightValue=-0.3;}
-// Decay levers back to center when no keyboard input
-if(!keysDown['q']&&!keysDown['Q']&&!keysDown['z']&&!keysDown['Z']&&
-!keysDown['ArrowUp']&&!keysDown['w']&&!keysDown['W']&&
-!keysDown['ArrowDown']&&!keysDown['s']&&!keysDown['S']&&
-!keysDown['ArrowLeft']&&!keysDown['a']&&!keysDown['A']&&
-!keysDown['ArrowRight']&&!keysDown['d']&&!keysDown['D']){
-if(!leverLeftTouchId) leverLeftValue *= 0.85;
-if(!leverRightTouchId) leverRightValue *= 0.85;
-}
-const lev2 = getLeversAsDxDy();
-dx = lev2.dx; dy = lev2.dy;
-// Auto throttle from lever intensity for levers mode
-throttleValue = clamp(Math.abs((leverLeftValue+leverRightValue)/2), 0.1, 1);
+// Keyboard: Q/E for left lever, Z/C or arrow keys for control
+if(keysDown['q']||keysDown['Q']) leverLeftValue = Math.min(1, leverLeftValue + 0.06);
+if(keysDown['e']||keysDown['E']) leverRightValue = Math.min(1, leverRightValue + 0.06);
+if(keysDown['z']||keysDown['Z']) leverLeftValue = Math.max(-1, leverLeftValue - 0.06);
+if(keysDown['c']||keysDown['C']) leverRightValue = Math.max(-1, leverRightValue - 0.06);
+// WASD as shortcut
+if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']){leverLeftValue=Math.min(1,leverLeftValue+0.06);leverRightValue=Math.min(1,leverRightValue+0.06);}
+if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']){leverLeftValue=Math.max(-1,leverLeftValue-0.06);leverRightValue=Math.max(-1,leverRightValue-0.06);}
+if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']){leverLeftValue=Math.max(-1,leverLeftValue-0.04);leverRightValue=Math.min(1,leverRightValue+0.04);}
+if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']){leverLeftValue=Math.min(1,leverLeftValue+0.04);leverRightValue=Math.max(-1,leverRightValue-0.04);}
+// Decay levers back to center when no touch/key input
+const anyKey = keysDown['q']||keysDown['Q']||keysDown['z']||keysDown['Z']||
+keysDown['ArrowUp']||keysDown['w']||keysDown['W']||keysDown['ArrowDown']||keysDown['s']||keysDown['S']||
+keysDown['ArrowLeft']||keysDown['a']||keysDown['A']||keysDown['ArrowRight']||keysDown['d']||keysDown['D']||
+keysDown['e']||keysDown['E']||keysDown['c']||keysDown['C'];
+if(!anyKey && !leverLeftTouchId) leverLeftValue *= 0.88;
+if(!anyKey && !leverRightTouchId) leverRightValue *= 0.88;
+// Real zero-turn physics: rotate then move forward in facing direction
+const lev = getLeversMovement(ms.angle);
+ms.angle += lev.turnRate * 0.02; // rotate the mower
+const fwd = lev.speed; // forward/reverse magnitude
+dx = Math.cos(ms.angle) * fwd;
+dy = Math.sin(ms.angle) * fwd;
+// Auto throttle from lever intensity
+throttleValue = clamp(Math.abs(fwd), 0.1, 1);
 } else {
 // Joystick mode (Country Clipper — easier, more responsive)
 if(joystickActive){ dx = joystickDX; dy = joystickDY; }
@@ -1947,13 +1949,16 @@ handle.style.top='50%';
 setupLeverTouch('L');
 setupLeverTouch('R');
 
-// Convert twin levers to dx/dy (tank-drive: both forward=straight, one forward+one back=turn)
-function getLeversAsDxDy(){
-const avg = (leverLeftValue + leverRightValue) / 2; // forward speed
-const diff = (leverRightValue - leverLeftValue); // turn rate
-// Convert to dx/dy based on current mower angle
-if(Math.abs(avg) < 0.05 && Math.abs(diff) < 0.05) return {dx:0,dy:0,turn:0};
-return {dx: diff * 0.8, dy: -avg, turn: diff};
+// Convert twin levers to rotation-based tank drive (real zero-turn physics)
+// Left lever = left wheel speed, Right lever = right wheel speed
+// Both forward = straight, one only = pivot around stationary wheel, opposite = spin in place
+function getLeversMovement(mowerAngle){
+const L = leverLeftValue;
+const R = leverRightValue;
+if(Math.abs(L) < 0.05 && Math.abs(R) < 0.05) return {speed:0, turnRate:0};
+const speed = (L + R) / 2; // forward/reverse speed
+const turnRate = (R - L) * 2.5; // rotation speed (radians-ish per frame)
+return {speed, turnRate};
 }
 
 // ===== ADVANCE WEEK =====
