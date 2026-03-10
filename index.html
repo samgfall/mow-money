@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mow Money 💰</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+--green-dark:#2d5a27;--green-mid:#4a8c3f;--green-light:#6db85a;--green-pale:#e8f5e3;
+--earth:#8B7355;--earth-light:#d4c5a9;--sky:#87CEEB;
+--bg:#f0f4e8;--card:#fff;--text:#1a2e1a;--text-light:#5a6e5a;
+--danger:#d44;--warning:#e8a735;--success:#4a8c3f;
+--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08);
+}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;-webkit-appearance:none}
+input{font-family:inherit;outline:none}
+
+/* SCREENS */
+.screen{display:none;position:absolute;inset:0;overflow-y:auto;overflow-x:hidden}
+.screen.active{display:flex;flex-direction:column}
+
+/* TITLE SCREEN */
+#title-screen{background:linear-gradient(135deg,#2d5a27 0%,#4a8c3f 50%,#6db85a 100%);
+justify-content:center;align-items:center;text-align:center;padding:20px}
+#title-screen h1{font-size:clamp(2rem,8vw,3.5rem);color:#fff;font-weight:900;text-shadow:2px 4px 8px rgba(0,0,0,.3);margin-bottom:4px}
+#title-screen .subtitle{color:rgba(255,255,255,.85);font-size:clamp(.9rem,3vw,1.1rem);margin-bottom:32px;font-weight:500}
+#title-screen .logo-icon{font-size:4rem;margin-bottom:16px;filter:drop-shadow(2px 4px 6px rgba(0,0,0,.2))}
+#title-screen input{width:min(300px,80vw);padding:14px 18px;border-radius:var(--radius);border:2px solid rgba(255,255,255,.3);
+background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;text-align:center;backdrop-filter:blur(10px);margin-bottom:16px}
+#title-screen input::placeholder{color:rgba(255,255,255,.5)}
+#title-screen .btn-start{background:#fff;color:var(--green-dark);padding:14px 48px;border-radius:var(--radius);
+font-size:1.1rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:transform .15s}
+#title-screen .btn-start:active{transform:scale(.95)}
+#title-screen .btn-continue{background:rgba(255,255,255,.2);color:#fff;padding:12px 36px;border-radius:var(--radius);
+font-size:.95rem;font-weight:600;margin-top:12px;border:1px solid rgba(255,255,255,.3)}
+
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;
+background:var(--green-dark);color:#fff;position:sticky;top:0;z-index:100;min-height:52px}
+.top-bar .cash{font-weight:700;font-size:1.05rem}
+.top-bar .week-info{font-size:.8rem;opacity:.85}
+.top-bar .rep{display:flex;align-items:center;gap:4px;font-size:.85rem}
+
+/* BOTTOM NAV */
+.bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;
+border-top:1px solid #e0e0e0;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;
+font-size:.65rem;color:var(--text-light);background:none;gap:2px;transition:color .2s}
+.bottom-nav button.active{color:var(--green-mid)}
+.bottom-nav button .nav-icon{font-size:1.3rem}
+
+/* DASHBOARD */
+#dashboard{padding-bottom:70px}
+.dash-greeting{padding:16px;font-size:1.1rem;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.stat-card .stat-label{font-size:.7rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-card .stat-value{font-size:1.3rem;font-weight:700;margin-top:4px}
+.stat-card .stat-sub{font-size:.75rem;color:var(--text-light);margin-top:2px}
+.stat-card.highlight{background:var(--green-dark);color:#fff}
+.stat-card.highlight .stat-label{color:rgba(255,255,255,.7)}
+.stat-card.highlight .stat-sub{color:rgba(255,255,255,.6)}
+
+.section-title{padding:16px 16px 8px;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light)}
+.action-cards{display:flex;flex-direction:column;gap:8px;padding:0 16px 16px}
+.action-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);
+display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .1s}
+.action-card:active{transform:scale(.98)}
+.action-card .ac-icon{font-size:1.5rem;width:44px;height:44px;border-radius:10px;
+display:flex;align-items:center;justify-content:center;background:var(--green-pale);flex-shrink:0}
+.action-card .ac-info{flex:1}
+.action-card .ac-title{font-weight:600;font-size:.95rem}
+.action-card .ac-desc{font-size:.78rem;color:var(--text-light);margin-top:2px}
+.action-card .ac-arrow{color:var(--text-light);font-size:1.2rem}
+
+.alert-banner{margin:0 16px 12px;padding:12px 16px;border-radius:var(--radius);font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:8px}
+.alert-banner.warning{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.alert-banner.danger{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.alert-banner.info{background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb}
+.alert-banner.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+
+/* ADVANCE WEEK BUTTON */
+.advance-week-btn{margin:8px 16px 16px;padding:16px;border-radius:var(--radius);background:linear-gradient(135deg,var(--green-mid),var(--green-dark));
+color:#fff;font-size:1.05rem;font-weight:700;box-shadow:0 4px 16px rgba(45,90,39,.3);transition:transform .15s;text-align:center}
+.advance-week-btn:active{transform:scale(.97)}
+.advance-week-btn.disabled{opacity:.5;pointer-events:none}
+
+/* CONTRACTS */
+#contracts{padding-bottom:70px}
+.contract-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 16px 10px}
+.contract-header{display:flex;justify-content:space-between;align-items:center}
+.contract-name{font-weight:600;font-size:.95rem}
+.contract-price{font-weight:700;color:var(--green-mid);font-size:1rem}
+.contract-details{display:flex;gap:12px;margin-top:6px;font-size:.78rem;color:var(--text-light);flex-wrap:wrap}
+.contract-tag{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600}
+.contract-tag.easy{background:#d4edda;color:#155724}
+.contract-tag.moderate{background:#fff3cd;color:#856404}
+.contract-tag.hard{background:#f8d7da;color:#721c24}
+.contract-status{margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.contract-status .mowed{font-size:.78rem;font-weight:600;color:var(--success)}
+.contract-status .not-mowed{font-size:.78rem;font-weight:600;color:var(--danger)}
+.contract-actions{display:flex;gap:8px;margin-top:8px}
+.contract-actions button{padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:600;flex:1}
+.btn-mow{background:var(--green-mid);color:#fff}
+.btn-assign{background:var(--green-pale);color:var(--green-dark)}
+.btn-drop{background:#f8d7da;color:var(--danger);font-size:.72rem!important}
+.new-contracts-section{margin:0 16px 10px;padding:14px;background:var(--green-pale);border-radius:var(--radius);border:2px dashed var(--green-mid)}
+.new-contracts-section h3{font-size:.9rem;margin-bottom:8px}
+
+/* SHOP */
+#shop{padding-bottom:70px}
+.shop-category{margin-bottom:8px}
+.shop-item{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 16px 10px}
+.shop-item-header{display:flex;justify-content:space-between;align-items:flex-start}
+.shop-item-name{font-weight:700;font-size:.95rem}
+.shop-item-price{font-weight:700;color:var(--green-mid);white-space:nowrap}
+.shop-item-stats{font-size:.78rem;color:var(--text-light);margin-top:4px}
+.shop-item-owned{font-size:.75rem;color:var(--success);font-weight:600;margin-top:4px}
+.btn-buy{padding:10px 20px;border-radius:8px;background:var(--green-mid);color:#fff;font-weight:600;
+font-size:.85rem;margin-top:8px;width:100%;transition:transform .1s}
+.btn-buy:active{transform:scale(.97)}
+.btn-buy:disabled{opacity:.4;pointer-events:none}
+
+/* EMPLOYEES */
+.employee-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 16px 10px}
+.emp-header{display:flex;justify-content:space-between;align-items:center}
+.emp-name{font-weight:600}
+.emp-level{font-size:.75rem;padding:2px 8px;border-radius:6px;font-weight:600}
+.emp-level.rookie{background:#fff3cd;color:#856404}
+.emp-level.experienced{background:#d1ecf1;color:#0c5460}
+.emp-level.expert{background:#d4edda;color:#155724}
+.emp-wage{font-size:.85rem;color:var(--text-light);margin-top:4px}
+.emp-assignment{font-size:.8rem;margin-top:6px;color:var(--green-mid);font-weight:500}
+.btn-hire{padding:10px 20px;border-radius:8px;background:var(--green-mid);color:#fff;font-weight:600;font-size:.85rem;margin-top:8px;width:100%}
+.btn-fire{padding:8px 16px;border-radius:8px;background:#f8d7da;color:var(--danger);font-weight:600;font-size:.78rem;margin-top:8px}
+
+/* MAP */
+#map-screen{padding-bottom:70px}
+#map-canvas{width:100%;aspect-ratio:1;background:#c8e6c0;border-radius:var(--radius);margin:16px;max-width:calc(100% - 32px)}
+
+/* MOWING GAME */
+#mowing-screen{background:#000;overflow:hidden}
+#mowing-screen .mow-hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
+padding:12px 16px;background:rgba(0,0,0,.5);color:#fff;z-index:10;font-size:.85rem;font-weight:600}
+#mow-canvas{width:100%;height:100%;display:block}
+.joystick-area{position:absolute;bottom:20px;left:20px;width:120px;height:120px;z-index:20;touch-action:none}
+.joystick-base{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);
+position:absolute}
+.joystick-knob{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.5);
+position:absolute;top:35px;left:35px;transition:none}
+.mow-complete-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;
+justify-content:center;align-items:center;z-index:30;color:#fff;text-align:center;padding:20px}
+.mow-complete-overlay h2{font-size:1.8rem;margin-bottom:8px}
+.mow-complete-overlay .stars{font-size:2rem;margin:12px 0}
+.mow-complete-overlay .mow-stats{font-size:.95rem;opacity:.8;margin:4px 0}
+.mow-complete-overlay button{margin-top:20px;padding:14px 40px;border-radius:var(--radius);
+background:var(--green-mid);color:#fff;font-size:1rem;font-weight:700}
+.mow-pause-btn{position:absolute;top:12px;right:16px;z-index:20;background:rgba(255,255,255,.2);
+color:#fff;padding:8px 12px;border-radius:8px;font-size:.8rem;font-weight:600}
+
+/* WEEK SUMMARY */
+#week-summary{background:linear-gradient(180deg,var(--green-dark) 0%,var(--bg) 40%);justify-content:flex-start;padding-top:0}
+.summary-header{padding:24px 16px 16px;color:#fff;text-align:center}
+.summary-header h2{font-size:1.4rem;font-weight:700}
+.summary-header .week-num{font-size:.9rem;opacity:.7}
+.summary-body{padding:0 16px 20px;flex:1}
+.summary-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.summary-card h3{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:10px}
+.summary-line{display:flex;justify-content:space-between;padding:4px 0;font-size:.9rem}
+.summary-line.total{border-top:2px solid var(--green-mid);margin-top:8px;padding-top:8px;font-weight:700;font-size:1rem}
+.summary-line .positive{color:var(--success)}
+.summary-line .negative{color:var(--danger)}
+.summary-event{padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:.85rem;display:flex;align-items:center;gap:8px}
+.summary-event.good{background:#d4edda;color:#155724}
+.summary-event.bad{background:#f8d7da;color:#721c24}
+.summary-event.neutral{background:#d1ecf1;color:#0c5460}
+.btn-continue-week{padding:16px;border-radius:var(--radius);background:var(--green-mid);color:#fff;
+font-size:1.05rem;font-weight:700;margin:8px 16px 20px;text-align:center}
+
+/* ADVERTISING MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;justify-content:center;align-items:flex-end}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:24px 16px;max-height:80vh;overflow-y:auto;width:100%;max-width:500px}
+.modal h2{font-size:1.1rem;font-weight:700;margin-bottom:16px}
+.modal-close{float:right;background:none;font-size:1.5rem;color:var(--text-light);margin-top:-4px}
+.modal .shop-item{margin:0 0 10px;box-shadow:none;border:1px solid #e0e0e0}
+
+/* ASSIGN MODAL */
+.assign-option{padding:12px;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.assign-option:active{background:var(--green-pale)}
+.assign-option .ao-name{font-weight:600;font-size:.9rem}
+.assign-option .ao-info{font-size:.78rem;color:var(--text-light)}
+
+/* SCROLLBAR */
+.screen::-webkit-scrollbar{width:4px}
+.screen::-webkit-scrollbar-thumb{background:var(--green-mid);border-radius:2px}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+/* DYNAMIC JOYSTICK */
+.joystick-touch-area{position:absolute;bottom:0;left:0;width:50%;height:60%;z-index:20;touch-action:none}
+.dyn-joystick-base{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.25);
+position:absolute;pointer-events:none;display:none}
+.dyn-joystick-knob{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.45);
+position:absolute;top:35px;left:35px;pointer-events:none}
+
+/* THROTTLE SLIDER */
+.throttle-area{position:absolute;bottom:80px;right:16px;width:44px;height:180px;z-index:20;touch-action:none;
+display:flex;flex-direction:column;align-items:center}
+.throttle-track{width:8px;height:140px;border-radius:4px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+position:relative}
+.throttle-fill{position:absolute;bottom:0;left:0;right:0;border-radius:4px;
+background:linear-gradient(to top,var(--green-mid),var(--warning),var(--danger));transition:height .1s}
+.throttle-handle{width:28px;height:14px;border-radius:4px;background:#fff;position:absolute;left:50%;
+transform:translateX(-50%);box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:grab}
+.throttle-label{color:rgba(255,255,255,.7);font-size:.6rem;font-weight:700;text-transform:uppercase;
+letter-spacing:.5px;margin-top:4px}
+
+/* MOWER HEALTH BAR (HUD) */
+.hud-health-bar{display:flex;align-items:center;gap:6px}
+.hud-health-track{width:80px;height:8px;border-radius:4px;background:rgba(255,255,255,.2);overflow:hidden}
+.hud-health-fill{height:100%;border-radius:4px;transition:width .3s,background .3s}
+.hud-health-text{font-size:.7rem;min-width:32px}
+.hud-speed{font-size:.75rem;display:flex;align-items:center;gap:4px}
+.hud-row{display:flex;justify-content:space-between;align-items:center;padding:2px 16px 6px;
+background:rgba(0,0,0,.5);color:#fff;z-index:10;font-size:.8rem}
+
+/* BREAKDOWN OVERLAY */
+.breakdown-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;flex-direction:column;
+justify-content:center;align-items:center;z-index:25;color:#fff;text-align:center;pointer-events:none}
+.breakdown-overlay h3{font-size:1.3rem;margin-bottom:8px}
+.breakdown-overlay .countdown{font-size:2rem;font-weight:800}
+
+/* ROUTE INFO */
+.route-info{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.route-tag{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600;background:#d1ecf1;color:#0c5460}
+.route-tag.bonus{background:#d4edda;color:#155724}
+
+/* TRUCK BADGE */
+.truck-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:.72rem;font-weight:600;background:#e8f0fe;color:#1a56db}
+.truck-badge.none{background:#f8d7da;color:#721c24}
+
+/* SEASON BAR */
+.season-bar{display:flex;align-items:center;gap:6px;padding:4px 16px 8px;font-size:.78rem;color:var(--text-light)}
+.season-icon{font-size:1rem}
+.weather-badge{padding:2px 8px;border-radius:6px;font-size:.72rem;font-weight:600;margin-left:auto}
+.weather-badge.clear{background:#d4edda;color:#155724}
+.weather-badge.rain{background:#d1ecf1;color:#0c5460}
+.weather-badge.storm{background:#f8d7da;color:#721c24}
+.weather-badge.drought{background:#fff3cd;color:#856404}
+
+/* LOAN */
+.loan-info{background:#fff3cd;border:1px solid #ffc107;border-radius:var(--radius);padding:12px;margin:0 16px 10px;font-size:.85rem}
+
+/* RESPONSIVE */
+@media(min-width:600px){
+.stats-grid{grid-template-columns:repeat(4,1fr)}
+.action-cards{flex-direction:row;flex-wrap:wrap}
+.action-card{flex:1;min-width:200px}
+}
+</style>
+</head>
+<body>
+
+<!-- TITLE SCREEN -->
+<div id="title-screen" class="screen active">
+<div class="logo-icon">&#127793;</div>
+<h1>MOW MONEY</h1>
+<p class="subtitle">Build Your Lawn Care Empire</p>
+<input type="text" id="player-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
+<button class="btn-start" onclick="startNewGame()">Start Company</button>
+<button class="btn-continue" id="btn-continue" style="display:none" onclick="loadGame()">Continue Game</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="screen">
+<div class="top-bar">
+<div>
+<div class="cash" id="top-cash">$2,000</div>
+<div class="week-info" id="top-week">Week 1 - Spring</div>
+</div>
+<div class="rep" id="top-rep"></div>
+</div>
+<div class="season-bar" id="season-bar"></div>
+<div id="alert-area"></div>
+<div class="dash-greeting" id="dash-greeting">Welcome!</div>
+<div class="stats-grid" id="stats-grid"></div>
+<div class="section-title">Quick Actions</div>
+<div class="action-cards" id="action-cards"></div>
+<div id="loan-area"></div>
+<button class="advance-week-btn" id="advance-btn" onclick="advanceWeek()">Advance to Next Week &#9654;</button>
+</div>
+
+<!-- CONTRACTS -->
+<div id="contracts" class="screen">
+<div class="top-bar"><div style="font-weight:600">Contracts</div><div class="cash" id="contracts-cash"></div></div>
+<div class="section-title" id="contracts-count">Your Contracts</div>
+<div id="contracts-list"></div>
+<div id="available-contracts"></div>
+</div>
+
+<!-- SHOP -->
+<div id="shop" class="screen">
+<div class="top-bar"><div style="font-weight:600">Shop</div><div class="cash" id="shop-cash"></div></div>
+<div class="section-title">Mowers</div>
+<div id="mower-list"></div>
+<div class="section-title">Vehicles</div>
+<div id="vehicle-list"></div>
+<div class="section-title">Advertising</div>
+<div id="ad-list"></div>
+</div>
+
+<!-- EMPLOYEES -->
+<div id="employees-screen" class="screen">
+<div class="top-bar"><div style="font-weight:600">Employees</div><div class="cash" id="emp-cash"></div></div>
+<div class="section-title">Your Crew</div>
+<div id="employee-list"></div>
+<div class="section-title">Available for Hire</div>
+<div id="hire-list"></div>
+</div>
+
+<!-- MAP -->
+<div id="map-screen" class="screen">
+<div class="top-bar"><div style="font-weight:600">Town Map</div><div class="cash" id="map-cash"></div></div>
+<canvas id="map-canvas"></canvas>
+</div>
+
+<!-- MOWING GAME -->
+<div id="mowing-screen" class="screen">
+<div class="mow-hud">
+<div id="mow-progress">0% Mowed</div>
+<div id="mow-timer">0:00</div>
+<div id="mow-yard-name">Yard</div>
+</div>
+<div class="hud-row">
+<div class="hud-health-bar" id="hud-health">
+<span style="font-size:.7rem">&#128295;</span>
+<div class="hud-health-track"><div class="hud-health-fill" id="hud-health-fill" style="width:100%;background:var(--success)"></div></div>
+<span class="hud-health-text" id="hud-health-text">100%</span>
+</div>
+<div class="hud-speed" id="hud-speed">&#9881; 50%</div>
+</div>
+<canvas id="mow-canvas"></canvas>
+<div class="joystick-touch-area" id="joystick-touch-area">
+<div class="dyn-joystick-base" id="dyn-joystick-base"><div class="dyn-joystick-knob" id="dyn-joystick-knob"></div></div>
+</div>
+<div class="throttle-area" id="throttle-area">
+<div class="throttle-track" id="throttle-track">
+<div class="throttle-fill" id="throttle-fill" style="height:50%"></div>
+<div class="throttle-handle" id="throttle-handle" style="bottom:calc(50% - 7px)"></div>
+</div>
+<div class="throttle-label">SPD</div>
+</div>
+<div id="breakdown-overlay" class="breakdown-overlay" style="display:none">
+<h3>&#128565; Mower Broke Down!</h3>
+<div class="countdown" id="breakdown-timer">10</div>
+<div style="font-size:.85rem;opacity:.7;margin-top:4px">Restarting...</div>
+</div>
+<div class="mow-complete-overlay" id="mow-complete" style="display:none"></div>
+</div>
+
+<!-- WEEK SUMMARY -->
+<div id="week-summary" class="screen">
+<div class="summary-header">
+<div class="week-num" id="summary-week-num">Week 1</div>
+<h2>Week Summary</h2>
+</div>
+<div class="summary-body" id="summary-body"></div>
+<button class="btn-continue-week" onclick="closeSummary()">Continue</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none">
+<div class="modal" id="modal-content"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+<button onclick="showScreen('dashboard')" data-screen="dashboard"><span class="nav-icon">&#127968;</span>Home</button>
+<button onclick="showScreen('contracts')" data-screen="contracts"><span class="nav-icon">&#128196;</span>Jobs</button>
+<button onclick="showScreen('shop')" data-screen="shop"><span class="nav-icon">&#128722;</span>Shop</button>
+<button onclick="showScreen('employees-screen')" data-screen="employees-screen"><span class="nav-icon">&#128101;</span>Crew</button>
+<button onclick="showScreen('map-screen')" data-screen="map-screen"><span class="nav-icon">&#128506;</span>Map</button>
+</div>
+
+<script>
+// roundRect polyfill
+if(!CanvasRenderingContext2D.prototype.roundRect){
+CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+if(!Array.isArray(r))r=[r||0];
+const tl=r[0]||0,tr=r[1]||tl,br=r[2]||tl,bl=r[3]||tr;
+this.moveTo(x+tl,y);this.lineTo(x+w-tr,y);this.quadraticCurveTo(x+w,y,x+w,y+tr);
+this.lineTo(x+w,y+h-br);this.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+this.lineTo(x+bl,y+h);this.quadraticCurveTo(x,y+h,x,y+h-bl);
+this.lineTo(x,y+tl);this.quadraticCurveTo(x,y,x+tl,y);this.closePath();return this;
+};
+}
+
+// ===== GAME DATA =====
+const MOWERS = [
+{id:'toro42',name:'Toro TimeCutter 42"',price:3500,speed:7,reliability:.70,efficiency:1,deck:42,desc:'Reliable starter mower'},
+{id:'gravely52',name:'Gravely ZT HD 52"',price:5500,speed:8,reliability:.80,efficiency:1.3,deck:52,desc:'Solid mid-range zero-turn'},
+{id:'scag_tiger',name:'Scag Tiger Cat II 52"',price:8500,speed:9,reliability:.90,efficiency:1.5,deck:52,desc:'Commercial grade power'},
+{id:'scag_vride',name:'Scag V-Ride II 52"',price:9800,speed:10,reliability:.92,efficiency:1.6,deck:52,desc:'Standing platform beast'},
+{id:'country_boss',name:'Country Clipper Boss XL 60"',price:13500,speed:11,reliability:.95,efficiency:2.0,deck:60,desc:'THE DREAM MACHINE'}
+];
+const YARD_TYPES = [
+{type:'small',label:'Small Yard',price:40,baseTime:45,difficulty:'easy',grassDensity:.7,obstacles:2,w:300,h:250},
+{type:'medium',label:'Medium Yard',price:65,baseTime:65,difficulty:'moderate',grassDensity:.8,obstacles:4,w:400,h:350},
+{type:'large',label:'Large Yard',price:95,baseTime:90,difficulty:'moderate',grassDensity:.85,obstacles:6,w:500,h:400},
+{type:'estate',label:'Estate',price:150,baseTime:120,difficulty:'hard',grassDensity:.9,obstacles:8,w:600,h:500},
+{type:'commercial',label:'Commercial',price:200,baseTime:150,difficulty:'hard',grassDensity:.9,obstacles:5,w:650,h:500}
+];
+const SEASONS = ['Spring','Spring','Spring','Summer','Summer','Summer','Summer','Summer','Summer','Fall','Fall','Fall','Winter'];
+const SEASON_ICONS = {Spring:'\u{1F331}',Summer:'\u2600\uFE0F',Fall:'\u{1F342}',Winter:'\u2744\uFE0F'};
+const WEATHER_TYPES = ['clear','clear','clear','clear','rain','rain','storm','drought'];
+const TRUCKS = [
+{id:'used_pickup',name:'Used Pickup',price:8000,reliability:.70,gasCost:15,desc:'Gets the job done... usually'},
+{id:'nice_truck',name:'Nice Truck',price:15000,reliability:.85,gasCost:12,desc:'Reliable daily driver'},
+{id:'new_f250',name:'New F-250',price:35000,reliability:.95,gasCost:18,desc:'Built Ford Tough'}
+];
+const FIRST_NAMES = ['Mike','Dave','Chris','Tom','Jake','Ryan','Matt','Sam','Alex','Dan','Joe','Ben','Kyle','Nick','Sean','Eric','Josh','Tyler','Cody','Luke'];
+const LAST_NAMES = ['Johnson','Smith','Williams','Brown','Jones','Garcia','Miller','Davis','Martinez','Wilson','Taylor','Thomas','Moore','Jackson','White','Harris'];
+const STREET_NAMES = ['Oak','Maple','Pine','Cedar','Elm','Birch','Walnut','Cherry','Spruce','Willow','Ash','Hickory','Magnolia','Dogwood','Sycamore'];
+const STREET_TYPES = ['St','Ave','Dr','Ln','Ct','Way','Blvd','Rd'];
+
+let G = null; // game state
+
+function defaultState(name) {
+return {
+playerName: name,
+companyName: name + "'s Lawn Care",
+cash: 2000,
+week: 1,
+season: 'Spring',
+weather: 'clear',
+reputation: 3.0,
+totalRepJobs: 0,
+totalRepScore: 0,
+mowers: [{...MOWERS[0], owned: true, condition: 100}],
+mowerLoan: 3500,
+mowerLoanPayment: 200,
+trucks: 0,
+truckPayment: 0,
+insurance: 150,
+hasWebsite: false,
+websiteCost: 50,
+employees: [],
+contracts: [],
+weeklyMowed: {},
+weekEvents: [],
+weekRevenue: 0,
+weekExpenses: 0,
+weekGas: 0,
+weekWages: 0,
+weekMaintenance: 0,
+totalRevenue: 0,
+totalWeeks: 0,
+advertisingActive: null,
+advertisingWeeksLeft: 0,
+pendingContracts: [],
+gameOver: false
+};
+}
+
+// ===== HELPERS =====
+function $(id){return document.getElementById(id)}
+function fmt(n){return '$'+Math.round(n).toLocaleString()}
+function rng(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+function genName(){return pick(FIRST_NAMES)+' '+pick(LAST_NAMES)}
+function genAddress(){return rng(100,9999)+' '+pick(STREET_NAMES)+' '+pick(STREET_TYPES)}
+
+function getSeason(week){
+const m = ((week - 1) % 52);
+if(m < 13) return 'Spring';
+if(m < 26) return 'Summer';
+if(m < 39) return 'Fall';
+return 'Winter';
+}
+
+function generateContract(){
+const t = pick(YARD_TYPES);
+const priceVar = rng(-5, 15);
+return {
+id: Date.now() + Math.random(),
+customerName: genName(),
+address: genAddress(),
+type: t.type,
+label: t.label,
+price: t.price + priceVar,
+difficulty: t.difficulty,
+baseTime: t.baseTime,
+satisfaction: 3,
+weeksActive: 0,
+mapX: rng(20, 280),
+mapY: rng(20, 280)
+};
+}
+
+function generateEmployee(){
+const levels = [{level:'Rookie',wage:15},{level:'Experienced',wage:20},{level:'Expert',wage:25}];
+const w = Math.random();
+const l = w < 0.5 ? levels[0] : w < 0.85 ? levels[1] : levels[2];
+return {
+id: Date.now() + Math.random(),
+name: genName(),
+level: l.level,
+wage: l.wage,
+assignedContracts: [],
+morale: 80 + rng(0,20)
+};
+}
+
+// ===== SCREEN MANAGEMENT =====
+function showScreen(id){
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+$(id).classList.add('active');
+document.querySelectorAll('.bottom-nav button').forEach(b=>{
+b.classList.toggle('active', b.dataset.screen===id);
+});
+if(id==='dashboard') renderDashboard();
+else if(id==='contracts') renderContracts();
+else if(id==='shop') renderShop();
+else if(id==='employees-screen') renderEmployees();
+else if(id==='map-screen') renderMap();
+}
+
+function showModal(html){
+$('modal-content').innerHTML = html;
+$('modal').style.display='flex';
+}
+function closeModal(){$('modal').style.display='none'}
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});
+
+// ===== START / LOAD =====
+function startNewGame(){
+const name = $('player-name').value.trim();
+if(!name) { $('player-name').style.borderColor='#d44'; return; }
+G = defaultState(name);
+// Generate starting contracts
+for(let i=0;i<3;i++) G.contracts.push(generateContract());
+// Generate some available contracts
+for(let i=0;i<2;i++) G.pendingContracts.push(generateContract());
+saveGame();
+$('bottom-nav').style.display='flex';
+showScreen('dashboard');
+}
+
+function loadGame(){
+const data = sessionStorage.getItem('lawn_tycoon_save');
+if(data){G=JSON.parse(data);$('bottom-nav').style.display='flex';showScreen('dashboard')}
+}
+
+function saveGame(){
+sessionStorage.setItem('lawn_tycoon_save', JSON.stringify(G));
+}
+
+// Enter key to start
+$('player-name').addEventListener('keydown',e=>{if(e.key==='Enter')startNewGame()});
+
+// Check for save on load
+if(sessionStorage.getItem('lawn_tycoon_save')){
+$('btn-continue').style.display='inline-block';
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+updateTopBar();
+const s = G.season;
+const icon = SEASON_ICONS[s]||'';
+const weatherLabel = G.weather.charAt(0).toUpperCase()+G.weather.slice(1);
+const wClass = G.weather;
+$('season-bar').innerHTML=`<span class="season-icon">${icon}</span> ${s}, Year ${Math.ceil(G.week/52)} &mdash; Week ${((G.week-1)%52)+1}/52
+<span class="weather-badge ${wClass}">${weatherLabel}</span>`;
+
+const unmowed = G.contracts.filter(c=>!G.weeklyMowed[c.id]).length;
+$('dash-greeting').innerHTML = unmowed > 0
+? `<span>&#127793;</span> ${G.contracts.length} yards this week, ${unmowed} left to mow`
+: `<span>&#9989;</span> All yards mowed! Ready to advance week.`;
+
+// Alerts
+let alerts = '';
+if(G.weather==='rain') alerts+=`<div class="alert-banner warning">&#127783; Rain this week - some customers may cancel if quality is low</div>`;
+if(G.weather==='storm') alerts+=`<div class="alert-banner danger">&#9888; Storm warning - chance of equipment damage</div>`;
+if(G.weather==='drought') alerts+=`<div class="alert-banner info">&#9728; Drought conditions - lawns grow slower, some customers may pause</div>`;
+if(G.season==='Winter') alerts+=`<div class="alert-banner info">&#10052; Winter - no mowing needed. Plan & upgrade for spring!</div>`;
+if(G.cash < 200) alerts+=`<div class="alert-banner danger">&#128176; Low on cash! You may need a loan.</div>`;
+$('alert-area').innerHTML = alerts;
+
+// Stats
+const weekRev = calcWeeklyRevenue();
+const weekExp = calcWeeklyExpenses();
+$('stats-grid').innerHTML = `
+<div class="stat-card highlight"><div class="stat-label">Cash</div><div class="stat-value">${fmt(G.cash)}</div><div class="stat-sub">Available</div></div>
+<div class="stat-card"><div class="stat-label">Weekly Revenue</div><div class="stat-value">${fmt(weekRev)}</div><div class="stat-sub">${G.contracts.length} contracts</div></div>
+<div class="stat-card"><div class="stat-label">Weekly Costs</div><div class="stat-value">${fmt(weekExp)}</div><div class="stat-sub">Est. expenses</div></div>
+<div class="stat-card"><div class="stat-label">Reputation</div><div class="stat-value">${G.reputation.toFixed(1)} &#11088;</div><div class="stat-sub">${getRepLabel(G.reputation)}</div></div>
+`;
+
+// Actions
+$('action-cards').innerHTML = `
+<div class="action-card" onclick="showScreen('contracts')">
+<div class="ac-icon">&#127793;</div>
+<div class="ac-info"><div class="ac-title">Mow Yards</div><div class="ac-desc">${unmowed} yards need mowing</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>
+<div class="action-card" onclick="showScreen('shop')">
+<div class="ac-icon">&#128722;</div>
+<div class="ac-info"><div class="ac-title">Shop</div><div class="ac-desc">Mowers, trucks & ads</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>
+<div class="action-card" onclick="showScreen('employees-screen')">
+<div class="ac-icon">&#128101;</div>
+<div class="ac-info"><div class="ac-title">Manage Crew</div><div class="ac-desc">${G.employees.length} employee${G.employees.length!==1?'s':''}</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>
+<div class="action-card" onclick="showAdvertising()">
+<div class="ac-icon">&#128227;</div>
+<div class="ac-info"><div class="ac-title">Advertise</div><div class="ac-desc">${G.advertisingActive?G.advertisingActive+' active':'Get more customers'}</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>
+`;
+
+// Loan info
+let loanHtml = '';
+if(G.mowerLoan > 0) loanHtml += `<div class="loan-info">&#127974; Mower Loan: ${fmt(G.mowerLoan)} remaining (${fmt(G.mowerLoanPayment)}/wk)</div>`;
+if(G.truckPayment > 0) loanHtml += `<div class="loan-info">&#128666; Truck Payment: ${fmt(G.truckPayment)}/mo</div>`;
+$('loan-area').innerHTML = loanHtml;
+
+// Advance button
+const canAdvance = G.season==='Winter' || unmowed === 0;
+$('advance-btn').className = 'advance-week-btn' + (canAdvance?'':' disabled');
+$('advance-btn').textContent = canAdvance ? 'Advance to Next Week \u25B6' : `Mow ${unmowed} remaining yard${unmowed!==1?'s':''} first`;
+}
+
+function updateTopBar(){
+$('top-cash').textContent = fmt(G.cash);
+$('top-week').textContent = `Week ${G.week} - ${G.season}`;
+$('top-rep').innerHTML = `${G.reputation.toFixed(1)} &#11088;`;
+['contracts-cash','shop-cash','emp-cash','map-cash'].forEach(id=>{
+const el=$(id);if(el)el.textContent=fmt(G.cash);
+});
+}
+
+function getRepLabel(r){
+if(r>=4.5)return'Outstanding';if(r>=4)return'Excellent';if(r>=3.5)return'Good';
+if(r>=3)return'Average';if(r>=2)return'Below Average';return'Poor';
+}
+
+function calcWeeklyRevenue(){
+if(G.season==='Winter') return 0;
+return G.contracts.reduce((s,c)=>s+c.price,0);
+}
+
+function calcWeeklyExpenses(){
+let exp = 0;
+// Gas per yard
+G.contracts.forEach(c=>{
+const yt = YARD_TYPES.find(y=>y.type===c.type);
+exp += 5 + (yt ? yt.baseTime/15 : 3); // roughly $5-15
+});
+// Employee wages (est 2hrs per yard)
+G.employees.forEach(e=>{
+exp += e.assignedContracts.length * 2 * e.wage;
+});
+// Insurance
+exp += G.insurance / 4; // weekly portion
+// Mower loan
+if(G.mowerLoan > 0) exp += G.mowerLoanPayment;
+// Truck payment
+if(G.truckPayment > 0) exp += G.truckPayment / 4;
+// Website
+if(G.hasWebsite) exp += G.websiteCost / 4;
+// Advertising
+if(G.advertisingActive==='Local Ads') exp += 200;
+// Maintenance
+exp += calcWeeklyRevenue() * 0.05;
+return exp;
+}
+
+// ===== CONTRACTS =====
+function renderContracts(){
+updateTopBar();
+$('contracts-count').textContent = `Your Contracts (${G.contracts.length})`;
+let html = '';
+G.contracts.forEach(c=>{
+const mowed = G.weeklyMowed[c.id];
+const assignedEmp = G.employees.find(e=>e.assignedContracts.includes(c.id));
+const isWinter = G.season==='Winter';
+html += `<div class="contract-card fade-in">
+<div class="contract-header">
+<div>
+<div class="contract-name">${c.customerName}</div>
+<div style="font-size:.75rem;color:var(--text-light)">${c.address}</div>
+</div>
+<div class="contract-price">${fmt(c.price)}/wk</div>
+</div>
+<div class="contract-details">
+<span>${c.label}</span>
+<span class="contract-tag ${c.difficulty}">${c.difficulty}</span>
+<span>&#11088; ${c.satisfaction}/5</span>
+${assignedEmp?`<span>&#128100; ${assignedEmp.name}</span>`:''}
+</div>
+<div class="contract-status">
+${isWinter ? '<span style="font-size:.78rem;color:var(--text-light)">Winter break</span>' :
+mowed ? '<span class="mowed">&#9989; Mowed</span>' : '<span class="not-mowed">&#10060; Not mowed</span>'}
+</div>
+${!isWinter && !mowed ? `<div class="contract-actions">
+<button class="btn-mow" onclick="startMowing('${c.id}')">&#127793; Mow It</button>
+${G.employees.length>0?`<button class="btn-assign" onclick="showAssignModal('${c.id}')">&#128100; Assign</button>`:''}
+<button class="btn-drop" onclick="dropContract('${c.id}')">Drop</button>
+</div>` : ''}
+</div>`;
+});
+$('contracts-list').innerHTML = html || '<div style="padding:16px;color:var(--text-light);text-align:center">No contracts yet</div>';
+
+// Available contracts
+let avail = '';
+if(G.pendingContracts.length > 0){
+avail = `<div class="new-contracts-section"><h3>&#128196; Available Contracts</h3>`;
+G.pendingContracts.forEach(c=>{
+avail += `<div class="contract-card" style="box-shadow:none;margin:8px 0;border:1px solid #e0e0e0">
+<div class="contract-header">
+<div><div class="contract-name">${c.customerName}</div><div style="font-size:.75rem;color:var(--text-light)">${c.address}</div></div>
+<div class="contract-price">${fmt(c.price)}/wk</div>
+</div>
+<div class="contract-details"><span>${c.label}</span><span class="contract-tag ${c.difficulty}">${c.difficulty}</span></div>
+<button class="btn-mow" style="margin-top:8px;width:100%" onclick="acceptContract('${c.id}')">Accept Contract</button>
+</div>`;
+});
+avail += '</div>';
+}
+$('available-contracts').innerHTML = avail;
+}
+
+function acceptContract(id){
+const idx = G.pendingContracts.findIndex(c=>String(c.id)===String(id));
+if(idx===-1) return;
+G.contracts.push(G.pendingContracts[idx]);
+G.pendingContracts.splice(idx,1);
+saveGame();
+renderContracts();
+}
+
+function dropContract(id){
+G.contracts = G.contracts.filter(c=>String(c.id)!==String(id));
+// Remove from employee assignments
+G.employees.forEach(e=>{e.assignedContracts=e.assignedContracts.filter(cid=>String(cid)!==String(id))});
+delete G.weeklyMowed[id];
+G.reputation = Math.max(1, G.reputation - 0.1);
+saveGame();
+renderContracts();
+}
+
+function showAssignModal(contractId){
+const c = G.contracts.find(c2=>String(c2.id)===String(contractId));
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button><h2>Assign Employee</h2>
+<p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px">to ${c.customerName}'s ${c.label}</p>`;
+const availMowers = G.mowers.filter(m=>m.owned).length;
+G.employees.forEach(e=>{
+const alreadyAssigned = e.assignedContracts.includes(contractId);
+html += `<div class="assign-option" onclick="assignEmployee('${e.id}','${contractId}')">
+<div><div class="ao-name">${e.name}</div><div class="ao-info">${e.level} - ${fmt(e.wage)}/hr - ${e.assignedContracts.length} yards</div></div>
+${alreadyAssigned?'<span style="color:var(--success);font-weight:600">Assigned</span>':''}
+</div>`;
+});
+if(G.employees.length === 0) html += '<p style="color:var(--text-light);text-align:center;padding:20px">No employees hired yet</p>';
+showModal(html);
+}
+
+function assignEmployee(empId, contractId){
+const emp = G.employees.find(e=>String(e.id)===String(empId));
+if(!emp) return;
+// Toggle assignment
+if(emp.assignedContracts.includes(contractId)){
+emp.assignedContracts = emp.assignedContracts.filter(cid=>cid!==contractId);
+} else {
+// Check if we have enough mowers for crews
+emp.assignedContracts.push(contractId);
+// Mark as mowed by employee
+G.weeklyMowed[contractId] = 'employee';
+}
+saveGame();
+closeModal();
+renderContracts();
+}
+
+// ===== SHOP =====
+function renderShop(){
+updateTopBar();
+let mowerHtml = '';
+MOWERS.forEach(m=>{
+const owned = G.mowers.find(om=>om.id===m.id && om.owned);
+mowerHtml += `<div class="shop-item">
+<div class="shop-item-header">
+<div class="shop-item-name">${m.name}</div>
+<div class="shop-item-price">${fmt(m.price)}</div>
+</div>
+<div class="shop-item-stats">${m.desc} | Speed: ${m.speed}mph | Reliability: ${Math.round(m.reliability*100)}% | Efficiency: ${m.efficiency}x</div>
+${owned ? `<div class="shop-item-owned">&#9989; Owned (Condition: ${Math.round(owned.condition)}%)
+${owned.condition < 80 ? `<button class="btn-buy" style="margin-top:6px;background:var(--warning);width:auto;padding:6px 16px" ${G.cash < Math.round(m.price*0.05) ? 'disabled' : ''} onclick="repairMower('${m.id}')">Repair ${fmt(Math.round(m.price*0.05))}</button>` : ''}</div>` :
+`<button class="btn-buy" ${G.cash<m.price?'disabled':''} onclick="buyMower('${m.id}')">Buy ${fmt(m.price)}</button>`}
+</div>`;
+});
+$('mower-list').innerHTML = mowerHtml;
+
+// Vehicles
+$('vehicle-list').innerHTML = `<div class="shop-item">
+<div class="shop-item-header">
+<div class="shop-item-name">Used Truck (F-150)</div>
+<div class="shop-item-price">$15,000</div>
+</div>
+<div class="shop-item-stats">Needed for hauling equipment to job sites. Required for employee crews. ${fmt(400)}/month payments.</div>
+${G.trucks > 0 ? `<div class="shop-item-owned">&#9989; Owned (${G.trucks} truck${G.trucks>1?'s':''})</div>` : ''}
+<button class="btn-buy" ${G.cash<3000?'disabled':''} onclick="buyTruck()">Buy (${fmt(3000)} down + ${fmt(400)}/mo)</button>
+</div>`;
+
+// Advertising
+$('ad-list').innerHTML = `
+<div class="shop-item">
+<div class="shop-item-header"><div class="shop-item-name">Flyers</div><div class="shop-item-price">$50</div></div>
+<div class="shop-item-stats">Print and distribute flyers. Small chance of 1-2 new contracts.</div>
+<button class="btn-buy" ${G.cash<50?'disabled':''} onclick="buyAd('flyers')">Print Flyers</button>
+</div>
+<div class="shop-item">
+<div class="shop-item-header"><div class="shop-item-name">Local Ads</div><div class="shop-item-price">$200/week</div></div>
+<div class="shop-item-stats">Run ads in local paper & online. Good chance of 2-4 new contracts per week.</div>
+${G.advertisingActive==='Local Ads'?'<div class="shop-item-owned">&#9989; Active ('+G.advertisingWeeksLeft+' weeks left)</div>':''}
+<button class="btn-buy" ${G.cash<200?'disabled':''} onclick="buyAd('local')">Run Ads (4 weeks)</button>
+</div>
+<div class="shop-item">
+<div class="shop-item-header"><div class="shop-item-name">Business Website</div><div class="shop-item-price">$500 + $50/mo</div></div>
+<div class="shop-item-stats">Professional website with online booking. Steady stream of leads.</div>
+${G.hasWebsite?'<div class="shop-item-owned">&#9989; Active</div>':
+`<button class="btn-buy" ${G.cash<500?'disabled':''} onclick="buyWebsite()">Build Website</button>`}
+</div>`;
+}
+
+function buyMower(id){
+const m = MOWERS.find(m2=>m2.id===id);
+if(!m || G.cash < m.price) return;
+G.cash -= m.price;
+G.mowers.push({...m, owned:true, condition:100});
+saveGame();
+renderShop();
+}
+
+function repairMower(id){
+const m = G.mowers.find(m2=>m2.id===id && m2.owned);
+if(!m) return;
+const cost = Math.round(MOWERS.find(m2=>m2.id===id).price * 0.05);
+if(G.cash < cost) return;
+G.cash -= cost;
+m.condition = Math.min(100, m.condition + 30);
+saveGame();
+renderShop();
+}
+
+function buyTruck(){
+if(G.cash < 3000) return;
+G.cash -= 3000;
+G.trucks++;
+G.truckPayment = 400 * G.trucks;
+saveGame();
+renderShop();
+}
+
+function buyAd(type){
+if(type==='flyers'){
+if(G.cash<50)return;
+G.cash-=50;
+// Immediate effect: 30% chance per flyer of getting a contract
+const newContracts = Math.random()<0.3 ? rng(1,2) : 0;
+for(let i=0;i<newContracts;i++) G.pendingContracts.push(generateContract());
+saveGame();
+if(newContracts>0) showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>Flyers Worked!</h2><p>${newContracts} potential customer${newContracts>1?'s':''} reached out! Check your contracts.</p>`);
+else showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>Flyers Distributed</h2><p>No responses yet, but your name is getting out there.</p>`);
+} else if(type==='local'){
+if(G.cash<200)return;
+G.cash-=200;
+G.advertisingActive='Local Ads';
+G.advertisingWeeksLeft=4;
+saveGame();
+}
+renderShop();
+}
+
+function buyWebsite(){
+if(G.cash<500)return;
+G.cash-=500;
+G.hasWebsite=true;
+saveGame();
+renderShop();
+}
+
+function showAdvertising(){
+showScreen('shop');
+}
+
+// ===== EMPLOYEES =====
+function renderEmployees(){
+updateTopBar();
+let html='';
+if(G.employees.length===0) html='<div style="padding:20px;text-align:center;color:var(--text-light)">No employees yet. Hire crew below!</div>';
+G.employees.forEach(e=>{
+html+=`<div class="employee-card fade-in">
+<div class="emp-header">
+<div class="emp-name">${e.name}</div>
+<span class="emp-level ${e.level.toLowerCase()}">${e.level}</span>
+</div>
+<div class="emp-wage">${fmt(e.wage)}/hr | Morale: ${e.morale}%</div>
+<div class="emp-assignment">${e.assignedContracts.length} yard${e.assignedContracts.length!==1?'s':''} assigned</div>
+<button class="btn-fire" onclick="fireEmployee('${e.id}')">Let Go</button>
+</div>`;
+});
+$('employee-list').innerHTML=html;
+
+// Available hires
+const canHire = G.trucks > 0 || G.employees.length === 0;
+let hireHtml='';
+if(!canHire){
+hireHtml='<div style="padding:20px;text-align:center;color:var(--text-light)">Buy a truck first to support more crew members.</div>';
+} else {
+// Generate 3 candidates
+const candidates = [generateEmployee(), generateEmployee(), generateEmployee()];
+candidates.forEach(e=>{
+hireHtml+=`<div class="employee-card">
+<div class="emp-header"><div class="emp-name">${e.name}</div><span class="emp-level ${e.level.toLowerCase()}">${e.level}</span></div>
+<div class="emp-wage">${fmt(e.wage)}/hr</div>
+<button class="btn-hire" onclick="hireEmployee(this)" data-emp='${JSON.stringify(e)}'>Hire ${e.name}</button>
+</div>`;
+});
+}
+$('hire-list').innerHTML=hireHtml;
+}
+
+function hireEmployee(btn){
+const e = JSON.parse(btn.dataset.emp);
+G.employees.push(e);
+saveGame();
+renderEmployees();
+}
+
+function fireEmployee(id){
+G.employees = G.employees.filter(e=>String(e.id)!==String(id));
+saveGame();
+renderEmployees();
+}
+
+// ===== MAP =====
+function renderMap(){
+updateTopBar();
+const canvas = $('map-canvas');
+const rect = canvas.parentElement.getBoundingClientRect();
+const size = Math.min(rect.width - 32, 500);
+canvas.width = size * 2; canvas.height = size * 2;
+canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+const ctx = canvas.getContext('2d');
+ctx.scale(2, 2);
+
+// Background
+ctx.fillStyle = '#c8e6c0';
+ctx.fillRect(0, 0, size, size);
+
+// Roads
+ctx.strokeStyle='#d4c5a9'; ctx.lineWidth=6;
+for(let i=0;i<6;i++){
+const p=size*i/5;
+ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,size);ctx.stroke();
+ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(size,p);ctx.stroke();
+}
+// Road center lines
+ctx.strokeStyle='#e8e0c8'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+for(let i=0;i<6;i++){
+const p=size*i/5;
+ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,size);ctx.stroke();
+ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(size,p);ctx.stroke();
+}
+ctx.setLineDash([]);
+
+// Decorative background houses (fixed positions)
+const housePositions = [[0.12,0.15],[0.35,0.08],[0.7,0.2],[0.85,0.45],[0.15,0.55],[0.6,0.7],[0.9,0.85],[0.25,0.82],[0.55,0.4],[0.78,0.62]];
+housePositions.forEach(([fx,fy])=>{
+const hx=fx*size, hy=fy*size;
+ctx.fillStyle='#ddd';
+ctx.fillRect(hx,hy,10,8);
+ctx.fillStyle='#b44';
+ctx.beginPath();ctx.moveTo(hx-1,hy);ctx.lineTo(hx+5,hy-4);ctx.lineTo(hx+11,hy);ctx.fill();
+});
+
+// Your HQ
+ctx.fillStyle='#2d5a27';
+ctx.beginPath();ctx.arc(size/2,size/2,10,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=2;
+ctx.beginPath();ctx.arc(size/2,size/2,10,0,Math.PI*2);ctx.stroke();
+ctx.fillStyle='#fff';ctx.font='bold 7px Inter';ctx.textAlign='center';
+ctx.fillText('HQ',size/2,size/2+2.5);
+
+// Contract pins
+G.contracts.forEach(c=>{
+const x = (c.mapX/300)*size;
+const y = (c.mapY/300)*size;
+const mowed = G.weeklyMowed[c.id];
+// Pin
+ctx.fillStyle = mowed?'#4a8c3f':'#cc3333';
+ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
+ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.stroke();
+// Inner dot
+ctx.fillStyle='#fff';
+ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
+// Label
+ctx.fillStyle='#1a2e1a';ctx.font='bold 6px Inter';ctx.textAlign='center';
+ctx.fillText(c.customerName.split(' ')[1],x,y-9);
+});
+
+// Legend
+const ly = size - 30;
+ctx.fillStyle='rgba(255,255,255,0.85)';
+ctx.fillRect(5, ly-2, 120, 28);
+ctx.fillStyle='#cc3333';ctx.beginPath();ctx.arc(15,ly+6,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#1a2e1a';ctx.font='7px Inter';ctx.textAlign='left';
+ctx.fillText('Needs mowing',24,ly+9);
+ctx.fillStyle='#4a8c3f';ctx.beginPath();ctx.arc(15,ly+18,4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#1a2e1a';ctx.fillText('Done',24,ly+21);
+}
+
+// ===== MOWING MINI-GAME =====
+let mowState = null;
+let mowAnimFrame = null;
+let joystickActive = false;
+let joystickDX = 0, joystickDY = 0;
+let keysDown = {};
+
+function startMowing(contractId){
+const c = G.contracts.find(c2=>String(c2.id)===String(contractId));
+if(!c) return;
+
+const yt = YARD_TYPES.find(y=>y.type===c.type);
+const canvas = $('mow-canvas');
+const screen = $('mowing-screen');
+
+showScreen('mowing-screen');
+$('bottom-nav').style.display='none';
+
+// Size canvas to screen
+const w = window.innerWidth;
+const h = window.innerHeight;
+canvas.width = w * 2;
+canvas.height = h * 2;
+canvas.style.width = w + 'px';
+canvas.style.height = h + 'px';
+
+// Generate yard
+const yardW = w;
+const yardH = h;
+const grassSize = 8; // size of each grass cell in canvas pixels (at 1x)
+const cols = Math.floor(yardW / grassSize);
+const rows = Math.floor(yardH / grassSize);
+
+const grass = [];
+for(let r=0;r<rows;r++){
+grass[r]=[];
+for(let cc=0;cc<cols;cc++){
+grass[r][cc] = 1; // 1=uncut
+}
+}
+
+// Border (not grass - driveway/house)
+const houseH = Math.floor(rows * 0.1);
+for(let r=0;r<houseH;r++) for(let cc=0;cc<cols;cc++) grass[r][cc]=0;
+// Fence borders
+for(let r=0;r<rows;r++){grass[r][0]=0;grass[r][cols-1]=0;}
+for(let cc=0;cc<cols;cc++){grass[rows-1][cc]=0;}
+
+// Obstacles
+const obstacles = [];
+const numObs = yt ? yt.obstacles : 3;
+for(let i=0;i<numObs;i++){
+const ox = rng(3,cols-4);
+const oy = rng(houseH+3,rows-4);
+const ow = rng(2,4);
+const oh = rng(2,4);
+const type = pick(['tree','flowerbed','rock']);
+const flowers = [];
+if(type==='flowerbed'){
+for(let fi=0;fi<5;fi++) flowers.push({fx:rng(2,ow*8-2),fy:rng(2,oh*8-2),fc:pick(['#e44','#e8a','#fa5','#a5f','#ff6','#f6a'])});
+}
+obstacles.push({x:ox,y:oy,w:ow,h:oh,type,flowers});
+for(let r=oy;r<Math.min(oy+oh,rows);r++)
+for(let cc2=ox;cc2<Math.min(ox+ow,cols);cc2++)
+grass[r][cc2] = 0; // not grass
+}
+
+// Count total grass
+let totalGrass = 0;
+for(let r=0;r<rows;r++) for(let cc=0;cc<cols;cc++) if(grass[r][cc]===1) totalGrass++;
+
+// Get best mower
+const bestMower = G.mowers.filter(m=>m.owned).sort((a,b)=>b.efficiency-a.efficiency)[0];
+const mowerSpeed = bestMower ? (bestMower.speed / 7) * 3 : 3; // pixels per frame at 1x
+const mowerWidth = bestMower ? (bestMower.deck / 42) * 3 : 3; // cells wide
+
+mowState = {
+contract: c,
+yardType: yt,
+canvas, w: yardW, h: yardH,
+grassSize, cols, rows, grass,
+totalGrass, cutGrass: 0,
+obstacles,
+mower: bestMower,
+mowerSpeed,
+mowerWidth: Math.max(2, Math.round(mowerWidth)),
+px: yardW / 2, py: yardH * 0.6, // player pos (in 1x coords)
+angle: 0,
+timer: 0, startTime: Date.now(),
+done: false, hitCount: 0,
+particles: [],
+stripes: [] // mowing stripe direction tracker
+};
+
+$('mow-complete').style.display='none';
+$('mow-yard-name').textContent = c.customerName + ' - ' + c.label;
+
+// Start game loop
+if(mowAnimFrame) cancelAnimationFrame(mowAnimFrame);
+mowLoop();
+}
+
+function mowLoop(){
+if(!mowState || mowState.done) return;
+const ms = mowState;
+const ctx = ms.canvas.getContext('2d');
+const scale = 2;
+ctx.save();
+ctx.scale(scale, scale);
+
+// Update timer
+ms.timer = (Date.now() - ms.startTime) / 1000;
+$('mow-timer').textContent = formatTime(ms.timer);
+
+// Move mower
+let dx = 0, dy = 0;
+if(joystickActive){ dx = joystickDX; dy = joystickDY; }
+if(keysDown['ArrowUp']||keysDown['w']||keysDown['W']) dy=-1;
+if(keysDown['ArrowDown']||keysDown['s']||keysDown['S']) dy=1;
+if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']) dx=-1;
+if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']) dx=1;
+
+const mag = Math.sqrt(dx*dx+dy*dy);
+if(mag > 0){
+dx/=mag; dy/=mag;
+ms.angle = Math.atan2(dy, dx);
+const nx = ms.px + dx * ms.mowerSpeed;
+const ny = ms.py + dy * ms.mowerSpeed;
+
+// Collision check with obstacles
+let blocked = false;
+const mowerR = ms.grassSize * ms.mowerWidth / 2;
+ms.obstacles.forEach(ob=>{
+const obL = ob.x * ms.grassSize;
+const obT = ob.y * ms.grassSize;
+const obR = (ob.x + ob.w) * ms.grassSize;
+const obB = (ob.y + ob.h) * ms.grassSize;
+if(nx + mowerR > obL && nx - mowerR < obR && ny + mowerR > obT && ny - mowerR < obB){
+blocked = true;
+}
+});
+
+if(!blocked && nx > ms.grassSize && nx < ms.w - ms.grassSize && ny > ms.grassSize * Math.floor(ms.rows*0.1) && ny < ms.h - ms.grassSize){
+ms.px = nx;
+ms.py = ny;
+}
+
+// Cut grass under mower
+const cx = Math.floor(ms.px / ms.grassSize);
+const cy = Math.floor(ms.py / ms.grassSize);
+const hw = Math.floor(ms.mowerWidth / 2);
+for(let r=cy-hw;r<=cy+hw;r++){
+for(let c=cx-hw;c<=cx+hw;c++){
+if(r>=0&&r<ms.rows&&c>=0&&c<ms.cols&&ms.grass[r][c]===1){
+ms.grass[r][c] = 2; // cut
+ms.cutGrass++;
+// Spawn particles
+if(Math.random()<0.3){
+ms.particles.push({
+x:c*ms.grassSize+rng(-3,3),
+y:r*ms.grassSize+rng(-3,3),
+vx:(Math.random()-0.5)*2,
+vy:-Math.random()*2-1,
+life:20+rng(0,10),
+size:rng(1,3)
+});
+}
+}
+}
+}
+}
+
+// Update particles
+ms.particles = ms.particles.filter(p=>{
+p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.life--;
+return p.life>0;
+});
+
+// Progress
+const progress = ms.totalGrass > 0 ? ms.cutGrass / ms.totalGrass : 0;
+$('mow-progress').textContent = Math.round(progress*100)+'% Mowed';
+
+// === DRAW ===
+// Sky/ground
+ctx.fillStyle='#4a7a3a';
+ctx.fillRect(0,0,ms.w,ms.h);
+
+// Draw grass
+for(let r=0;r<ms.rows;r++){
+for(let c=0;c<ms.cols;c++){
+const x=c*ms.grassSize, y=r*ms.grassSize;
+if(ms.grass[r][c]===0){
+// Not grass (house/border)
+if(r < Math.floor(ms.rows*0.1)){
+ctx.fillStyle='#b0a080'; // house
+} else {
+ctx.fillStyle='#8a7a5a'; // fence/border
+}
+ctx.fillRect(x,y,ms.grassSize,ms.grassSize);
+} else if(ms.grass[r][c]===1){
+// Uncut grass with slight variation
+const shade = ((r+c)%3===0)?'#3a8a2a':((r+c)%3===1)?'#45952f':'#4da035';
+ctx.fillStyle=shade;
+ctx.fillRect(x,y,ms.grassSize,ms.grassSize);
+// Grass blade hints
+if((r+c)%4===0){
+ctx.fillStyle='#2d7a1f';
+ctx.fillRect(x+2,y,1,ms.grassSize-2);
+}
+} else {
+// Cut grass - striped pattern
+const stripe = (r % 4 < 2);
+ctx.fillStyle = stripe ? '#7ab86a' : '#85c476';
+ctx.fillRect(x,y,ms.grassSize,ms.grassSize);
+}
+}
+}
+
+// Draw house at top
+const houseTop = 0;
+const houseBtm = Math.floor(ms.rows*0.1)*ms.grassSize;
+ctx.fillStyle='#c4a882';
+ctx.fillRect(ms.w*0.15, houseTop, ms.w*0.7, houseBtm);
+ctx.fillStyle='#8B4513';
+// Roof
+ctx.beginPath();
+ctx.moveTo(ms.w*0.1, houseBtm*0.3);
+ctx.lineTo(ms.w*0.5, houseTop+2);
+ctx.lineTo(ms.w*0.9, houseBtm*0.3);
+ctx.closePath();
+ctx.fill();
+// Door
+ctx.fillStyle='#5a3520';
+ctx.fillRect(ms.w*0.46, houseBtm*0.45, ms.w*0.08, houseBtm*0.55);
+// Windows
+ctx.fillStyle='#87CEEB';
+ctx.fillRect(ms.w*0.25, houseBtm*0.45, ms.w*0.1, houseBtm*0.3);
+ctx.fillRect(ms.w*0.65, houseBtm*0.45, ms.w*0.1, houseBtm*0.3);
+// Driveway
+ctx.fillStyle='#a0a0a0';
+ctx.fillRect(ms.w*0.42, houseBtm, ms.w*0.16, ms.grassSize*2);
+
+// Draw obstacles
+ms.obstacles.forEach(ob=>{
+const x=ob.x*ms.grassSize, y=ob.y*ms.grassSize;
+const w2=ob.w*ms.grassSize, h2=ob.h*ms.grassSize;
+if(ob.type==='tree'){
+// Shadow
+ctx.fillStyle='rgba(0,0,0,0.1)';
+ctx.beginPath();ctx.ellipse(x+w2/2,y+h2*0.85,w2*0.45,h2*0.15,0,0,Math.PI*2);ctx.fill();
+// Trunk
+ctx.fillStyle='#5a3a1a';
+ctx.fillRect(x+w2*0.35,y+h2*0.35,w2*0.3,h2*0.65);
+// Canopy
+ctx.fillStyle='#2d6a1a';
+ctx.beginPath();ctx.arc(x+w2/2,y+h2*0.3,w2*0.55,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#3a8a2a';
+ctx.beginPath();ctx.arc(x+w2*0.4,y+h2*0.25,w2*0.35,0,Math.PI*2);ctx.fill();
+} else if(ob.type==='flowerbed'){
+ctx.fillStyle='#6a4a2a';
+ctx.fillRect(x,y,w2,h2);
+ctx.fillStyle='#5a3a1a';
+ctx.fillRect(x+1,y+1,w2-2,h2-2);
+(ob.flowers||[]).forEach(f=>{
+ctx.fillStyle=f.fc;
+ctx.beginPath();ctx.arc(x+f.fx,y+f.fy,2.5,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#3a7a2a';
+ctx.fillRect(x+f.fx-0.5,y+f.fy+2,1,3);
+});
+} else {
+ctx.fillStyle='#888';
+ctx.beginPath();ctx.ellipse(x+w2/2,y+h2/2,w2/2,h2/2,0,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#999';
+ctx.beginPath();ctx.ellipse(x+w2/2,y+h2*0.4,w2*0.4,h2*0.3,0,0,Math.PI*2);ctx.fill();
+}
+});
+
+// Draw particles
+ctx.fillStyle='#6db85a';
+ms.particles.forEach(p=>{
+ctx.globalAlpha=p.life/30;
+ctx.fillRect(p.x,p.y,p.size,p.size);
+});
+ctx.globalAlpha=1;
+
+// Draw mower
+ctx.save();
+ctx.translate(ms.px, ms.py);
+ctx.rotate(ms.angle);
+const mowerR = ms.grassSize * ms.mowerWidth / 2;
+// Shadow
+ctx.fillStyle='rgba(0,0,0,0.15)';
+ctx.beginPath();ctx.ellipse(1,2,mowerR+2,mowerR*0.7,0,0,Math.PI*2);ctx.fill();
+// Deck (cutting area - front)
+ctx.fillStyle='#555';
+ctx.beginPath();
+ctx.roundRect(-mowerR-2, -mowerR*0.5, mowerR*0.8, mowerR*1, [3]);
+ctx.fill();
+// Body
+ctx.fillStyle='#cc3333';
+ctx.beginPath();
+ctx.roundRect(-mowerR*0.4, -mowerR*0.7, mowerR*1.8, mowerR*1.4, [4]);
+ctx.fill();
+// Engine
+ctx.fillStyle='#222';
+ctx.fillRect(mowerR*0.5, -mowerR*0.5, mowerR*0.6, mowerR*1);
+// Seat
+ctx.fillStyle='#1a1a1a';
+ctx.beginPath();
+ctx.roundRect(-mowerR*0.1, -mowerR*0.35, mowerR*0.5, mowerR*0.7, [3]);
+ctx.fill();
+// Wheels
+ctx.fillStyle='#333';
+ctx.beginPath();ctx.arc(-mowerR*0.2, -mowerR*0.7, 3, 0, Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(-mowerR*0.2, mowerR*0.7, 3, 0, Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(mowerR*0.9, -mowerR*0.6, 4, 0, Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(mowerR*0.9, mowerR*0.6, 4, 0, Math.PI*2);ctx.fill();
+ctx.restore();
+
+ctx.restore();
+
+// Check completion
+if(progress >= 0.95 && !ms.done){
+completeMowing();
+return;
+}
+
+mowAnimFrame = requestAnimationFrame(mowLoop);
+}
+
+function formatTime(s){
+const m=Math.floor(s/60);const sec=Math.floor(s%60);
+return m+':'+(sec<10?'0':'')+sec;
+}
+
+function completeMowing(){
+mowState.done = true;
+const ms = mowState;
+const c = ms.contract;
+const yt = ms.yardType;
+
+// Calculate performance
+const cutPercent = ms.cutGrass / ms.totalGrass;
+const baseTime = yt ? yt.baseTime : 60;
+const efficiency = ms.mower ? ms.mower.efficiency : 1;
+const targetTime = baseTime / efficiency;
+const timeBonus = ms.timer < targetTime ? Math.round((targetTime - ms.timer) * 0.5) : 0;
+
+// Stars rating
+let stars = 3;
+if(cutPercent > 0.98) stars++;
+if(ms.hitCount === 0 && ms.timer < targetTime * 1.5) stars++;
+if(cutPercent < 0.96) stars--;
+stars = clamp(stars, 1, 5);
+
+// Update satisfaction
+c.satisfaction = clamp(Math.round((c.satisfaction * 0.7) + (stars * 0.3)), 1, 5);
+G.weeklyMowed[c.id] = 'owner';
+
+// Gas cost
+const gasCost = 5 + (yt ? yt.baseTime / 15 : 3);
+G.weekGas += gasCost;
+
+// Track reputation
+G.totalRepJobs++;
+G.totalRepScore += stars;
+G.reputation = clamp(G.totalRepScore / G.totalRepJobs, 1, 5);
+
+// Show complete overlay
+const starStr = '\u2B50'.repeat(stars) + '\u2606'.repeat(5-stars);
+$('mow-complete').style.display='flex';
+$('mow-complete').innerHTML = `
+<h2>Yard Complete!</h2>
+<div class="stars">${starStr}</div>
+<div class="mow-stats">Coverage: ${Math.round(cutPercent*100)}%</div>
+<div class="mow-stats">Time: ${formatTime(ms.timer)}</div>
+<div class="mow-stats">Gas Cost: ${fmt(gasCost)}</div>
+${timeBonus > 0 ? `<div class="mow-stats" style="color:#6db85a">Speed Bonus: +${fmt(timeBonus)}</div>` : ''}
+<button onclick="exitMowing()">Continue</button>
+`;
+
+saveGame();
+}
+
+function exitMowing(){
+mowState = null;
+if(mowAnimFrame) cancelAnimationFrame(mowAnimFrame);
+$('bottom-nav').style.display='flex';
+showScreen('contracts');
+}
+
+// Joystick controls
+const jArea = $('joystick-area');
+const jKnob = $('joystick-knob');
+
+function handleJoystickStart(e){
+e.preventDefault();
+joystickActive = true;
+}
+
+function handleJoystickMove(e){
+e.preventDefault();
+if(!joystickActive) return;
+const touch = e.touches ? e.touches[0] : e;
+const rect = jArea.getBoundingClientRect();
+const cx = rect.left + rect.width/2;
+const cy = rect.top + rect.height/2;
+const dx = touch.clientX - cx;
+const dy = touch.clientY - cy;
+const dist = Math.sqrt(dx*dx+dy*dy);
+const maxDist = 40;
+const clampedDist = Math.min(dist, maxDist);
+const angle = Math.atan2(dy, dx);
+const nx = Math.cos(angle) * clampedDist;
+const ny = Math.sin(angle) * clampedDist;
+jKnob.style.left = (35 + nx) + 'px';
+jKnob.style.top = (35 + ny) + 'px';
+joystickDX = nx / maxDist;
+joystickDY = ny / maxDist;
+}
+
+function handleJoystickEnd(e){
+e.preventDefault();
+joystickActive = false;
+joystickDX = 0; joystickDY = 0;
+jKnob.style.left = '35px';
+jKnob.style.top = '35px';
+}
+
+jArea.addEventListener('touchstart', handleJoystickStart, {passive:false});
+jArea.addEventListener('touchmove', handleJoystickMove, {passive:false});
+jArea.addEventListener('touchend', handleJoystickEnd, {passive:false});
+jArea.addEventListener('mousedown', e=>{handleJoystickStart(e);
+const mm=e2=>handleJoystickMove(e2);
+const mu=()=>{handleJoystickEnd({preventDefault:()=>{}});document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu)};
+document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+});
+
+// Keyboard controls
+document.addEventListener('keydown',e=>{keysDown[e.key]=true});
+document.addEventListener('keyup',e=>{delete keysDown[e.key]});
+
+// ===== ADVANCE WEEK =====
+function advanceWeek(){
+const unmowed = G.contracts.filter(c=>!G.weeklyMowed[c.id]).length;
+if(unmowed > 0 && G.season !== 'Winter') return;
+
+G.weekEvents = [];
+let revenue = 0;
+let expenses = 0;
+let gasCost = G.weekGas || 0;
+let wagesCost = 0;
+let maintenanceCost = 0;
+
+if(G.season !== 'Winter'){
+// Revenue from mowed yards
+G.contracts.forEach(c=>{
+if(G.weeklyMowed[c.id]){
+revenue += c.price;
+c.weeksActive++;
+}
+});
+
+// Employee wages
+G.employees.forEach(e=>{
+const hoursPerYard = e.level==='Expert'?1.5:e.level==='Experienced'?2:2.5;
+const hours = e.assignedContracts.length * hoursPerYard;
+const wage = hours * e.wage;
+wagesCost += wage;
+
+// Employee quality check
+e.assignedContracts.forEach(cid=>{
+const contract = G.contracts.find(c2=>String(c2.id)===String(cid));
+if(!contract) return;
+let quality = 3;
+if(e.level==='Expert') quality = rng(4,5);
+else if(e.level==='Experienced') quality = rng(3,5);
+else quality = rng(2,4);
+// Morale affects quality
+if(e.morale < 50) quality = Math.max(1, quality-1);
+contract.satisfaction = clamp(Math.round((contract.satisfaction + quality)/2),1,5);
+G.totalRepJobs++;
+G.totalRepScore += quality;
+});
+});
+
+// Gas for employee-mowed yards
+G.employees.forEach(e=>{
+e.assignedContracts.forEach(cid=>{
+const contract = G.contracts.find(c2=>String(c2.id)===String(cid));
+if(contract){
+const yt = YARD_TYPES.find(y=>y.type===contract.type);
+gasCost += 5 + (yt ? yt.baseTime/15 : 3);
+}
+});
+});
+
+// Maintenance
+maintenanceCost = revenue * 0.05;
+G.mowers.forEach(m=>{
+if(m.owned) m.condition = Math.max(0, m.condition - rng(1,3));
+});
+}
+
+// Fixed expenses
+let insuranceCost = G.insurance / 4;
+let loanPayment = 0;
+if(G.mowerLoan > 0){
+loanPayment = Math.min(G.mowerLoanPayment, G.mowerLoan);
+G.mowerLoan -= loanPayment;
+if(G.mowerLoan <= 0){
+G.mowerLoan = 0;
+G.weekEvents.push({text:'Mower loan paid off!',type:'good'});
+}
+}
+
+let truckPay = G.truckPayment > 0 ? G.truckPayment / 4 : 0;
+let websiteCost = G.hasWebsite ? G.websiteCost / 4 : 0;
+let adCost = 0;
+if(G.advertisingActive==='Local Ads' && G.advertisingWeeksLeft > 0){
+adCost = 200;
+G.advertisingWeeksLeft--;
+if(G.advertisingWeeksLeft <= 0) G.advertisingActive = null;
+}
+
+expenses = gasCost + wagesCost + maintenanceCost + insuranceCost + loanPayment + truckPay + websiteCost + adCost;
+
+// Net income
+const net = revenue - expenses;
+G.cash += net;
+G.totalRevenue += revenue;
+G.weekRevenue = revenue;
+G.weekExpenses = expenses;
+G.weekGas = 0;
+G.weekWages = wagesCost;
+G.weekMaintenance = maintenanceCost;
+
+// Update reputation
+if(G.totalRepJobs > 0) G.reputation = clamp(G.totalRepScore / G.totalRepJobs, 1, 5);
+
+// RANDOM EVENTS
+if(G.season !== 'Winter'){
+// Weather effects
+if(G.weather==='storm'){
+if(Math.random()<0.3){
+const m = G.mowers.find(m2=>m2.owned);
+if(m){m.condition = Math.max(0,m.condition-rng(10,25));G.weekEvents.push({text:`Storm damaged your ${m.name}!`,type:'bad'})}
+}
+}
+
+// Mower breakdown
+G.mowers.forEach(m=>{
+if(m.owned && m.condition < 30 && Math.random()<0.3){
+const repairCost = Math.round(m.price * 0.1);
+G.cash -= repairCost;
+expenses += repairCost;
+m.condition = Math.min(100, m.condition + 40);
+G.weekEvents.push({text:`${m.name} broke down! Repair cost: ${fmt(repairCost)}`,type:'bad'});
+}
+});
+
+// Employee no-show
+G.employees.forEach(e=>{
+if(Math.random()<0.05){
+e.morale = Math.max(20, e.morale - 15);
+G.weekEvents.push({text:`${e.name} called in sick this week.`,type:'bad'});
+}
+});
+
+// Referrals from happy customers
+G.contracts.forEach(c=>{
+if(c.satisfaction >= 4 && Math.random()<0.15){
+const nc = generateContract();
+G.pendingContracts.push(nc);
+G.weekEvents.push({text:`${c.customerName} referred a friend! New lead available.`,type:'good'});
+}
+});
+
+// Customer cancellation
+G.contracts = G.contracts.filter(c=>{
+if(c.satisfaction <= 1 && Math.random()<0.5){
+G.weekEvents.push({text:`${c.customerName} cancelled - unsatisfied with service.`,type:'bad'});
+G.reputation = Math.max(1, G.reputation - 0.2);
+return false;
+}
+return true;
+});
+}
+
+// Advertising leads
+if(G.advertisingActive==='Local Ads'){
+const newLeads = rng(1,3);
+for(let i=0;i<newLeads;i++) G.pendingContracts.push(generateContract());
+G.weekEvents.push({text:`Your ads brought in ${newLeads} new lead${newLeads>1?'s':''}!`,type:'good'});
+}
+if(G.hasWebsite && Math.random()<0.4){
+G.pendingContracts.push(generateContract());
+G.weekEvents.push({text:'New lead from your website!',type:'good'});
+}
+
+// Advance week
+G.week++;
+G.season = getSeason(G.week);
+G.weather = pick(WEATHER_TYPES);
+G.weeklyMowed = {};
+
+// Insurance grows with company
+G.insurance = 150 + G.employees.length * 50 + G.contracts.length * 5;
+
+// Employee morale recovery
+G.employees.forEach(e=>{ e.morale = Math.min(100, e.morale + rng(2,5)); });
+
+// Seasonal effects
+if(G.season === 'Winter'){
+G.weekEvents.push({text:'Winter has arrived. No mowing this season - plan for spring!',type:'neutral'});
+}
+
+// Show summary
+showWeekSummary(revenue, gasCost, wagesCost, maintenanceCost, insuranceCost, loanPayment, truckPay, websiteCost, adCost, net);
+saveGame();
+}
+
+function showWeekSummary(revenue, gas, wages, maint, insurance, loan, truck, website, ads, net){
+$('summary-week-num').textContent = `Week ${G.week - 1} Complete`;
+
+let html = '';
+
+// Revenue card
+html += `<div class="summary-card"><h3>Revenue</h3>`;
+html += `<div class="summary-line"><span>Mowing Income</span><span class="positive">+${fmt(revenue)}</span></div>`;
+html += `</div>`;
+
+// Expenses card
+html += `<div class="summary-card"><h3>Expenses</h3>`;
+if(gas > 0) html += `<div class="summary-line"><span>Fuel</span><span class="negative">-${fmt(gas)}</span></div>`;
+if(wages > 0) html += `<div class="summary-line"><span>Employee Wages</span><span class="negative">-${fmt(wages)}</span></div>`;
+if(maint > 0) html += `<div class="summary-line"><span>Maintenance</span><span class="negative">-${fmt(maint)}</span></div>`;
+if(insurance > 0) html += `<div class="summary-line"><span>Insurance</span><span class="negative">-${fmt(insurance)}</span></div>`;
+if(loan > 0) html += `<div class="summary-line"><span>Mower Loan</span><span class="negative">-${fmt(loan)}</span></div>`;
+if(truck > 0) html += `<div class="summary-line"><span>Truck Payment</span><span class="negative">-${fmt(truck)}</span></div>`;
+if(website > 0) html += `<div class="summary-line"><span>Website</span><span class="negative">-${fmt(website)}</span></div>`;
+if(ads > 0) html += `<div class="summary-line"><span>Advertising</span><span class="negative">-${fmt(ads)}</span></div>`;
+html += `<div class="summary-line total"><span>Net Income</span><span class="${net>=0?'positive':'negative'}">${net>=0?'+':''}${fmt(net)}</span></div>`;
+html += `</div>`;
+
+// Events
+if(G.weekEvents.length > 0){
+html += `<div class="summary-card"><h3>Events</h3>`;
+G.weekEvents.forEach(ev=>{
+const icon = ev.type==='good'?'\u2705':ev.type==='bad'?'\u26A0\uFE0F':'\u2139\uFE0F';
+html += `<div class="summary-event ${ev.type}">${icon} ${ev.text}</div>`;
+});
+html += `</div>`;
+}
+
+// Status
+html += `<div class="summary-card"><h3>Business Status</h3>
+<div class="summary-line"><span>Cash</span><span>${fmt(G.cash)}</span></div>
+<div class="summary-line"><span>Contracts</span><span>${G.contracts.length}</span></div>
+<div class="summary-line"><span>Employees</span><span>${G.employees.length}</span></div>
+<div class="summary-line"><span>Reputation</span><span>${G.reputation.toFixed(1)} \u2B50</span></div>
+<div class="summary-line"><span>Season</span><span>${SEASON_ICONS[G.season]} ${G.season}</span></div>
+</div>`;
+
+$('summary-body').innerHTML = html;
+showScreen('week-summary');
+$('bottom-nav').style.display='none';
+}
+
+function closeSummary(){
+$('bottom-nav').style.display='flex';
+showScreen('dashboard');
+}
+
+// Prevent default touch scrolling on game canvas
+$('mow-canvas').addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+
+// Window resize handler for mowing
+window.addEventListener('resize',()=>{
+if(mowState && !mowState.done){
+const canvas = mowState.canvas;
+const w = window.innerWidth;
+const h = window.innerHeight;
+canvas.width = w*2; canvas.height = h*2;
+canvas.style.width = w+'px'; canvas.style.height = h+'px';
+}
+});
+
+</script>
+</body>
+</html>
