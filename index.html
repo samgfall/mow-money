@@ -144,8 +144,8 @@ font-size:.85rem;margin-top:8px;width:100%;transition:transform .1s}
 /* MOWING GAME */
 #mowing-screen{background:#000;overflow:hidden}
 #mowing-screen .mow-hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
-padding:max(12px, env(safe-area-inset-top)) 16px 10px;background:rgba(0,0,0,.65);color:#fff;z-index:10;font-size:.8rem;font-weight:600;backdrop-filter:blur(4px)}
-#mow-canvas{width:100%;height:100%;display:block;position:absolute;top:0;left:0}
+padding:max(24px, calc(env(safe-area-inset-top) + 14px)) 16px 10px;background:rgba(0,0,0,.85);color:#fff;z-index:10;font-size:.8rem;font-weight:600;backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.15)}
+#mow-canvas{width:100%;height:100%;display:block;position:absolute;top:0;left:50%;transform:translateX(-50%)}
 /* old fixed joystick removed — see dynamic joystick CSS above */
 .mow-complete-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;
 justify-content:center;align-items:center;z-index:30;color:#fff;text-align:center;padding:20px}
@@ -264,6 +264,28 @@ justify-content:center;align-items:center;z-index:25;color:#fff;text-align:cente
 /* LOAN */
 .loan-info{background:#fff3cd;border:1px solid #ffc107;border-radius:var(--radius);padding:12px;margin:0 16px 10px;font-size:.85rem}
 
+/* TUTORIAL */
+.tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;justify-content:center;align-items:center;padding:20px}
+.tutorial-card{background:#fff;border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.tutorial-card h2{font-size:1.2rem;margin-bottom:8px;color:var(--green-dark)}
+.tutorial-card p{font-size:.9rem;color:var(--text);line-height:1.5;margin-bottom:16px}
+.tutorial-card .tutorial-icon{font-size:2.5rem;margin-bottom:8px}
+.tutorial-card .tutorial-step{font-size:.72rem;color:var(--text-light);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.tutorial-card .btn-tutorial{padding:12px 32px;border-radius:var(--radius);background:var(--green-mid);color:#fff;font-size:.95rem;font-weight:600;margin:4px}
+.tutorial-card .btn-skip{padding:8px 20px;border-radius:var(--radius);background:none;color:var(--text-light);font-size:.8rem;font-weight:500}
+
+/* GAME OVER */
+#game-over-screen{background:linear-gradient(180deg,#1a1a1a 0%,#2a1a1a 50%,#1a1a1a 100%);
+justify-content:center;align-items:center;text-align:center;padding:20px}
+#game-over-screen h1{font-size:2rem;color:#d44;font-weight:900;margin-bottom:4px}
+#game-over-screen .go-subtitle{color:rgba(255,255,255,.6);font-size:.95rem;margin-bottom:24px}
+#game-over-screen .go-icon{font-size:3rem;margin-bottom:12px}
+#game-over-screen .go-stats{background:rgba(255,255,255,.08);border-radius:var(--radius);padding:16px;margin-bottom:20px;text-align:left;width:min(300px,80vw)}
+#game-over-screen .go-stat{display:flex;justify-content:space-between;padding:6px 0;font-size:.9rem;color:rgba(255,255,255,.8)}
+#game-over-screen .go-stat .go-label{color:rgba(255,255,255,.5)}
+#game-over-screen .btn-restart{background:#d44;color:#fff;padding:14px 48px;border-radius:var(--radius);
+font-size:1.05rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+
 /* RESPONSIVE */
 @media(min-width:600px){
 .stats-grid{grid-template-columns:repeat(4,1fr)}
@@ -370,6 +392,7 @@ justify-content:center;align-items:center;z-index:25;color:#fff;text-align:cente
 <h3>&#128565; Mower Broke Down!</h3>
 <div class="countdown" id="breakdown-timer">10</div>
 <div style="font-size:.85rem;opacity:.7;margin-top:4px">Restarting...</div>
+<div style="font-size:.75rem;opacity:.5;margin-top:8px">💡 Tip: Repair your mower in the Shop to prevent breakdowns</div>
 </div>
 <div class="mow-complete-overlay" id="mow-complete" style="display:none"></div>
 </div>
@@ -382,6 +405,20 @@ justify-content:center;align-items:center;z-index:25;color:#fff;text-align:cente
 </div>
 <div class="summary-body" id="summary-body"></div>
 <button class="btn-continue-week" onclick="closeSummary()">Continue</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="game-over-screen" class="screen">
+<div class="go-icon">💸</div>
+<h1>OUT OF BUSINESS</h1>
+<p class="go-subtitle">Your lawn care company has gone under.</p>
+<div class="go-stats" id="go-stats"></div>
+<button class="btn-restart" onclick="restartGame()">Try Again</button>
+</div>
+
+<!-- TUTORIAL -->
+<div class="tutorial-overlay" id="tutorial-overlay" style="display:none">
+<div class="tutorial-card" id="tutorial-card"></div>
 </div>
 
 <!-- MODAL -->
@@ -476,7 +513,9 @@ advertisingActive: null,
 advertisingWeeksLeft: 0,
 pendingContracts: [],
 gameOver: false,
-truckPayment: 0
+truckPayment: 0,
+consecutiveNegativeWeeks: 0,
+tutorialSeen: false
 };
 }
 
@@ -564,22 +603,76 @@ for(let i=0;i<2;i++) G.pendingContracts.push(generateContract());
 saveGame();
 $('bottom-nav').style.display='flex';
 showScreen('dashboard');
+showTutorial();
+}
+
+function restartGame(){
+localStorage.removeItem('lawn_tycoon_save');
+$('bottom-nav').style.display='none';
+showScreen('title-screen');
+$('btn-continue').style.display='none';
+$('player-name').value='';
+}
+
+// ===== TUTORIAL =====
+const TUTORIAL_STEPS = [
+{icon:'🌱',title:'Welcome to Mow Money!',text:'You just started a lawn care business. Your goal: take contracts, mow yards, earn cash, and grow your empire.'},
+{icon:'📋',title:'Contracts = Income',text:'Check the <b>Jobs</b> tab to see your contracts. Tap <b>"Mow It"</b> to mow a yard yourself, or assign an employee.'},
+{icon:'🎮',title:'Mowing Yards',text:'Use the <b>joystick</b> (left side) to steer and the <b>throttle</b> (right side) to control speed. Cover 95% of the grass to complete a yard. Watch out for obstacles!'},
+{icon:'👥',title:'Hiring Crew',text:'As you grow, hire employees in the <b>Crew</b> tab. Each employee needs a <b>truck</b> assigned to work. Buy trucks in the <b>Shop</b>.'},
+{icon:'🔧',title:'Equipment Care',text:'Your mower takes damage from hitting obstacles and fences. If health drops low, visit the <b>Shop</b> to repair it before it breaks down!'},
+{icon:'💰',title:'Stay in the Green',text:'Watch your cash flow! Bills come every week — fuel, insurance, loans. If you run out of money and can\'t recover, your business goes under. Good luck!'}
+];
+
+let tutorialStep = 0;
+
+function showTutorial(){
+tutorialStep = 0;
+$('tutorial-overlay').style.display='flex';
+renderTutorialStep();
+}
+
+function renderTutorialStep(){
+const step = TUTORIAL_STEPS[tutorialStep];
+const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+$('tutorial-card').innerHTML = `
+<div class="tutorial-step">Step ${tutorialStep+1} of ${TUTORIAL_STEPS.length}</div>
+<div class="tutorial-icon">${step.icon}</div>
+<h2>${step.title}</h2>
+<p>${step.text}</p>
+<button class="btn-tutorial" onclick="nextTutorialStep()">${isLast?'Let\'s Go!':'Next'}</button>
+${tutorialStep===0?'<br><button class="btn-skip" onclick="closeTutorial()">Skip Tutorial</button>':''}
+`;
+}
+
+function nextTutorialStep(){
+tutorialStep++;
+if(tutorialStep >= TUTORIAL_STEPS.length){
+closeTutorial();
+} else {
+renderTutorialStep();
+}
+}
+
+function closeTutorial(){
+$('tutorial-overlay').style.display='none';
+if(G) { G.tutorialSeen=true; saveGame(); }
 }
 
 function loadGame(){
-const data = sessionStorage.getItem('lawn_tycoon_save');
+const data = localStorage.getItem('lawn_tycoon_save');
 if(data){G=JSON.parse(data);$('bottom-nav').style.display='flex';showScreen('dashboard')}
 }
 
 function saveGame(){
-sessionStorage.setItem('lawn_tycoon_save', JSON.stringify(G));
+localStorage.setItem('lawn_tycoon_save', JSON.stringify(G));
 }
 
 // Enter key to start
 $('player-name').addEventListener('keydown',e=>{if(e.key==='Enter')startNewGame()});
 
 // Check for save on load
-if(sessionStorage.getItem('lawn_tycoon_save')){
+if(localStorage.getItem('lawn_tycoon_save')){
 $('btn-continue').style.display='inline-block';
 }
 
@@ -604,12 +697,13 @@ if(G.weather==='rain') alerts+=`<div class="alert-banner warning">&#127783; Rain
 if(G.weather==='storm') alerts+=`<div class="alert-banner danger">&#9888; Storm warning - chance of equipment damage</div>`;
 if(G.weather==='drought') alerts+=`<div class="alert-banner info">&#9728; Drought conditions - lawns grow slower, some customers may pause</div>`;
 if(G.season==='Winter') alerts+=`<div class="alert-banner info">&#10052; Winter - no mowing needed. Plan & upgrade for spring!</div>`;
-if(G.cash < 200) alerts+=`<div class="alert-banner danger">&#128176; Low on cash! You may need a loan.</div>`;
+if(G.cash < 0) alerts+=`<div class="alert-banner danger">&#128176; You're in debt (${fmt(G.cash)})! Mow yards to earn money or your business will go under.</div>`;
+else if(G.cash < 200) alerts+=`<div class="alert-banner danger">&#128176; Low on cash! Mow your yards and consider picking up more contracts.</div>`;
 // Mower health warnings
 G.mowers.forEach(m=>{
-if(m.owned && (m.health||100) <= 0) alerts+=`<div class="alert-banner danger">&#128165; ${m.name} is DESTROYED! Repair it in the shop.</div>`;
-else if(m.owned && (m.health||100) < 25) alerts+=`<div class="alert-banner danger">&#128295; ${m.name} is critically damaged (${Math.round(m.health)}%) — repair in Shop!</div>`;
-else if(m.owned && (m.health||100) < 75) alerts+=`<div class="alert-banner warning">&#128295; ${m.name} needs maintenance (${Math.round(m.health)}%) — repair in Shop</div>`;
+if(m.owned && (m.health||100) <= 0) alerts+=`<div class="alert-banner danger" style="cursor:pointer" onclick="showScreen('shop')">&#128165; ${m.name} is DESTROYED! <b>Tap here to repair →</b></div>`;
+else if(m.owned && (m.health||100) < 25) alerts+=`<div class="alert-banner danger" style="cursor:pointer" onclick="showScreen('shop')">&#128295; ${m.name} is critically damaged (${Math.round(m.health)}%) — <b>Tap to repair →</b></div>`;
+else if(m.owned && (m.health||100) < 75) alerts+=`<div class="alert-banner warning" style="cursor:pointer" onclick="showScreen('shop')">&#128295; ${m.name} needs maintenance (${Math.round(m.health)}%) — <b>Tap to repair →</b></div>`;
 });
 // Unassigned trucks warning
 const empsNoTruck = G.employees.filter(e=>!getEmployeeTruck(e.id));
@@ -1225,7 +1319,6 @@ canvas.width = w * 2;
 canvas.height = h * 2;
 canvas.style.width = w + 'px';
 canvas.style.height = h + 'px';
-canvas.style.left = '0';
 canvas.style.top = '0';
 
 // Generate yard
@@ -1397,8 +1490,8 @@ if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']) dx=1;
 // Obstacle avoidance — better mowers auto-steer around obstacles & boundaries
 if(mowAvoidance > 0 && (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05)){
 const lookAhead = ms.grassSize * ms.mowerWidth * 1.8;
-const testX = ms.px + dx * speed * lookAhead;
-const testY = ms.py + dy * speed * lookAhead;
+const testX = ms.px + dx * currentSpeed * lookAhead;
+const testY = ms.py + dy * currentSpeed * lookAhead;
 let needsAvoid = false;
 let avoidDX = 0, avoidDY = 0;
 // Check obstacles ahead
@@ -1557,15 +1650,27 @@ function mowerDestroyed(){
 const ms = mowState;
 ms.done = true;
 if(ms.mower) ms.mower.health = 0;
+const repairCost = ms.mower ? fmt(Math.round(MOWERS.find(m=>m.id===ms.mower.id).price * 0.15)) : '$500';
 $('mow-complete').style.display='flex';
 $('mow-complete').innerHTML = `
 <h2 style="color:var(--danger)">Mower Destroyed!</h2>
 <div style="font-size:3rem;margin:12px 0">&#128165;</div>
 <div class="mow-stats">Your ${ms.mower?ms.mower.name:'mower'} is totaled.</div>
-<div class="mow-stats">You'll need to repair or buy a new one.</div>
 <div class="mow-stats" style="margin-top:8px">Coverage: ${Math.round((ms.cutGrass/ms.totalGrass)*100)}%</div>
-<button onclick="exitMowing()">Back to Jobs</button>`;
+<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:12px;margin:12px 0;font-size:.85rem;text-align:left">
+<div style="font-weight:700;margin-bottom:4px">🔧 How to fix it:</div>
+<div>Go to the <b>Shop</b> tab and find your mower. Use <b>Full Repair</b> (${repairCost}) to restore it to 100%, or choose a cheaper partial repair.</div>
+</div>
+<button onclick="exitMowingToShop()">Go to Shop 🔧</button>
+<button onclick="exitMowing()" style="background:rgba(255,255,255,.2);margin-top:8px">Back to Jobs</button>`;
 saveGame();
+}
+
+function exitMowingToShop(){
+mowState = null;
+if(mowAnimFrame) cancelAnimationFrame(mowAnimFrame);
+$('bottom-nav').style.display='flex';
+showScreen('shop');
 }
 
 function drawMowScene(ctx, ms){
@@ -2188,6 +2293,29 @@ G.pendingContracts.push(generateContract());
 G.weekEvents.push({text:'New lead from your website!',type:'good'});
 }
 
+// === BANKRUPTCY CHECK ===
+if(G.cash < 0){
+if(!G.consecutiveNegativeWeeks) G.consecutiveNegativeWeeks = 0;
+G.consecutiveNegativeWeeks++;
+} else {
+G.consecutiveNegativeWeeks = 0;
+}
+
+// Game over conditions:
+// 1. Cash negative, no contracts, no way to earn
+// 2. Cash negative for 3+ consecutive weeks with no improvement
+const noMowers = G.mowers.filter(m=>m.owned && (m.health||100)>0).length === 0;
+const noContracts = G.contracts.length === 0 && G.pendingContracts.length === 0;
+const cantRecover = G.cash < -500 && noMowers && noContracts;
+const prolongedDebt = G.consecutiveNegativeWeeks >= 3 && G.cash < -200;
+
+if(cantRecover || prolongedDebt){
+G.gameOver = true;
+showGameOver();
+saveGame();
+return;
+}
+
 // Advance week
 G.week++;
 G.season = getSeason(G.week);
@@ -2269,6 +2397,25 @@ html += `<div class="summary-card"><h3>Business Status</h3>
 $('summary-body').innerHTML = html;
 showScreen('week-summary');
 $('bottom-nav').style.display='none';
+}
+
+function showGameOver(){
+const weeksAlive = G.week;
+const totalRev = G.totalRevenue || 0;
+const maxContracts = G.contracts.length;
+const maxEmployees = G.employees.length;
+const rep = G.reputation ? G.reputation.toFixed(1) : '3.0';
+
+$('go-stats').innerHTML = `
+<div class="go-stat"><span class="go-label">Weeks in Business</span><span>${weeksAlive}</span></div>
+<div class="go-stat"><span class="go-label">Total Revenue</span><span>${fmt(totalRev)}</span></div>
+<div class="go-stat"><span class="go-label">Final Cash</span><span style="color:#f66">${fmt(G.cash)}</span></div>
+<div class="go-stat"><span class="go-label">Peak Contracts</span><span>${maxContracts}</span></div>
+<div class="go-stat"><span class="go-label">Employees</span><span>${maxEmployees}</span></div>
+<div class="go-stat"><span class="go-label">Reputation</span><span>${rep} ⭐</span></div>
+`;
+$('bottom-nav').style.display='none';
+showScreen('game-over-screen');
 }
 
 function closeSummary(){
