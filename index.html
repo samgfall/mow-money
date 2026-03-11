@@ -2308,6 +2308,36 @@ const healthPenalty = mowerHealth < 50 ? 0.5 + (mowerHealth / 100) : 1;
 let preCut = 0;
 for(let r=0;r<rows;r++) for(let cc=0;cc<cols;cc++) if(grass[r][cc]===2) preCut++;
 
+// Calculate safe spawn position — start on the driveway (bottom of house area)
+// Driveway is at center-x, just below the house zone
+const mowerR_spawn = grassSize * Math.max(2, Math.round(mowerWidth)) / 2;
+let spawnX = yardW / 2; // center of yard horizontally
+let spawnY = houseH * grassSize + mowerR_spawn + grassSize * 3; // just below house + margin
+// Validate spawn doesn't overlap any obstacle; if it does, nudge down/sideways
+let spawnAttempts = 0;
+while(spawnAttempts < 20){
+let spawnBlocked = false;
+for(const ob of obstacles){
+const obL = ob.x * grassSize - grassSize;
+const obT = ob.y * grassSize - grassSize;
+const obR = (ob.x + ob.w) * grassSize + grassSize;
+const obB = (ob.y + ob.h) * grassSize + grassSize;
+if(spawnX + mowerR_spawn > obL && spawnX - mowerR_spawn < obR &&
+   spawnY + mowerR_spawn > obT && spawnY - mowerR_spawn < obB){
+  spawnBlocked = true;
+  break;
+}
+}
+if(!spawnBlocked) break;
+// Try nudging: alternate between moving down and sideways
+spawnAttempts++;
+if(spawnAttempts % 2 === 1) spawnY += grassSize * 2;
+else spawnX += (spawnAttempts % 4 === 0 ? -1 : 1) * grassSize * 3;
+// Keep within bounds
+spawnX = clamp(spawnX, mowerR_spawn + grassSize * 2, yardW - mowerR_spawn - grassSize * 2);
+spawnY = clamp(spawnY, houseH * grassSize + mowerR_spawn + grassSize, yardH - mowerR_spawn - grassSize * 2);
+}
+
 mowState = {
 contract: c,
 yardType: yt,
@@ -2321,7 +2351,7 @@ mowerSpeed,
 baseMowerSpeed: mowerSpeed,
 mowerWidth: Math.max(2, Math.round(mowerWidth)),
 baseMowerWidth: Math.max(2, Math.round(mowerWidth)),
-px: yardW / 2, py: yardH * 0.6,
+px: spawnX, py: spawnY,
 angle: -Math.PI/2, drift: 0, // start facing "up" into the yard
 timer: 0, startTime: Date.now(),
 done: false, hitCount: 0,
@@ -2578,7 +2608,7 @@ drawMowScene(ctx, ms);
 ctx.restore();
 
 // Check completion
-if(progress >= 0.88 && !ms.done){
+if(progress >= 0.95 && !ms.done){
 completeMowing();
 return;
 }
@@ -2788,10 +2818,12 @@ const timeBonus = ms.timer < targetTime ? Math.round((targetTime - ms.timer) * 0
 
 // Stars rating (+ Green Thumb skill bonus)
 let stars = 3;
-if(cutPercent > 0.95) stars++;
+if(cutPercent > 0.98) stars++; // extra star for near-perfect coverage
 if(ms.hitCount === 0 && ms.timer < targetTime * 1.5) stars++;
-if(cutPercent < 0.90) stars--;
+if(cutPercent < 0.96) stars--; // penalty for barely completing
 if(ms.damageThisRun > 15) stars--;
+// Time bonus: complete before 30 seconds for extra star on any yard
+if(ms.timer < 30) stars++;
 stars = clamp(stars, 1, 5);
 const greenBonus = getSkillEffect('greenThumb');
 const effectiveStars = Math.min(5, stars + greenBonus);
