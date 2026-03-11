@@ -417,6 +417,65 @@ background:linear-gradient(135deg,#e8f0fe,#d1e3ff);color:#1a56db;border:1px soli
 /* COMPANY LABEL ON TOP BAR */
 .top-company{font-size:.7rem;opacity:.7;font-weight:400}
 
+/* BEEZER MODAL */
+.beezer-modal{text-align:center}
+.beezer-avatar{font-size:3rem;margin-bottom:8px}
+.beezer-name{font-size:1rem;font-weight:800;color:var(--green-dark);margin-bottom:4px}
+.beezer-title{font-size:.72rem;color:var(--text-light);margin-bottom:12px}
+.beezer-speech{background:var(--green-pale);border-radius:var(--radius);padding:12px;font-size:.9rem;
+line-height:1.5;margin-bottom:16px;font-style:italic;color:var(--text);position:relative}
+.beezer-speech::after{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid var(--green-pale)}
+.beezer-mower-card{background:#fff;border:2px solid var(--green-mid);border-radius:var(--radius);padding:12px;margin:12px 0;text-align:left}
+.beezer-mower-card .bmc-name{font-weight:700;font-size:.95rem;color:var(--green-dark)}
+.beezer-mower-card .bmc-stats{font-size:.78rem;color:var(--text-light);margin-top:4px}
+.beezer-mower-card .bmc-price{font-weight:700;color:var(--green-mid);margin-top:4px}
+.beezer-btn{padding:12px 24px;border-radius:var(--radius);font-size:.95rem;font-weight:700;margin:4px;transition:transform .1s}
+.beezer-btn:active{transform:scale(.97)}
+.beezer-btn.primary{background:var(--green-mid);color:#fff}
+.beezer-btn.secondary{background:var(--green-pale);color:var(--green-dark)}
+.beezer-btn.buy{background:linear-gradient(135deg,#ffc107,#ff9800);color:#fff}
+.beezer-btn.dismiss{background:none;color:var(--text-light);font-size:.8rem;font-weight:500}
+.beezer-damage-report{font-size:.85rem;margin:12px 0;padding:10px;border-radius:8px}
+.beezer-damage-report.pristine{background:#d4edda;color:#155724}
+.beezer-damage-report.light{background:#fff3cd;color:#856404}
+.beezer-damage-report.heavy{background:#f8d7da;color:#721c24}
+.beezer-damage-report.destroyed{background:#1a1a1a;color:#f66}
+
+/* COMPETITOR MAP TERRITORIES */
+.map-legend{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px;font-size:.72rem;align-items:center}
+.map-legend-item{display:flex;align-items:center;gap:4px}
+.map-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.map-company-label{font-weight:700;font-size:.78rem;color:var(--green-dark);padding:0 16px 4px}
+
+/* COMPETE SECTION */
+.compete-modal h2{margin-bottom:8px}
+.compete-customer{background:var(--green-pale);border-radius:var(--radius);padding:12px;margin-bottom:12px;text-align:left}
+.compete-customer .cc-name{font-weight:700;font-size:.9rem}
+.compete-customer .cc-details{font-size:.78rem;color:var(--text-light);margin-top:4px}
+.compete-tactic{border:1px solid #e0e0e0;border-radius:var(--radius);padding:12px;margin-bottom:8px;cursor:pointer;transition:transform .1s}
+.compete-tactic:active{transform:scale(.98)}
+.compete-tactic .ct-name{font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:6px}
+.compete-tactic .ct-desc{font-size:.78rem;color:var(--text-light);margin-top:4px}
+.compete-tactic .ct-chance{font-size:.72rem;font-weight:600;margin-top:4px}
+.compete-tactic .ct-chance.high{color:var(--success)}
+.compete-tactic .ct-chance.medium{color:var(--warning)}
+.compete-tactic .ct-chance.low{color:var(--danger)}
+.riddle-box{background:#f0f4e8;border-radius:var(--radius);padding:14px;margin:12px 0;text-align:left}
+.riddle-box .riddle-q{font-size:.9rem;font-weight:600;margin-bottom:10px}
+.riddle-box .riddle-options{display:flex;flex-direction:column;gap:6px}
+.riddle-box .riddle-opt{padding:10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;font-size:.85rem;
+font-weight:500;cursor:pointer;text-align:left;transition:transform .1s}
+.riddle-box .riddle-opt:active{transform:scale(.98)}
+.undercut-slider{margin:12px 0}
+.undercut-slider input[type=range]{width:100%;accent-color:var(--green-mid)}
+.undercut-info{display:flex;justify-content:space-between;font-size:.8rem;margin-top:4px}
+.compete-result{text-align:center;padding:16px}
+.compete-result .cr-icon{font-size:3rem;margin-bottom:8px}
+.compete-result .cr-title{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.compete-result .cr-text{font-size:.85rem;color:var(--text-light);margin-bottom:12px}
+.steal-counter{font-size:.72rem;color:var(--text-light);padding:4px 16px}
+
 /* RESPONSIVE */
 @media(min-width:600px){
 .stats-grid{grid-template-columns:repeat(4,1fr)}
@@ -658,7 +717,11 @@ const ACHIEVEMENTS = [
 {id:'full_house',name:'Full House',icon:'\uD83C\uDFE0',desc:'Have 10+ contracts',hint:'Lots of jobs',xp:70,check:g=>g.contracts.length>=10},
 {id:'snow_boss',name:'Snow Boss',icon:'\u2744\uFE0F',desc:'Complete 10 snow plowing jobs',hint:'Plow lots of snow',xp:60,check:null},
 {id:'all_seasons',name:'All Seasons Pro',icon:'\uD83C\uDF0D',desc:'Complete jobs in all 4 seasons',hint:'Work year-round',xp:80,check:null},
-{id:'competitor_crusher',name:'Competitor Crusher',icon:'\uD83D\uDCAA',desc:'Reach higher reputation than all competitors',hint:'Beat the competition',xp:75,check:g=>(g.competitors||[]).every(c=>g.reputation>c.rep)}
+{id:'competitor_crusher',name:'Competitor Crusher',icon:'\uD83D\uDCAA',desc:'Reach higher reputation than all competitors',hint:'Beat the competition',xp:75,check:g=>(g.competitors||[]).every(c=>g.reputation>c.rep)},
+{id:'beezer_friend',name:"Beezer's Best Friend",icon:'\uD83E\uDD20',desc:'Demo 5 mowers from Beezer',hint:'Demo mowers from Beezer',xp:60,check:g=>(g.beezerDemosTotal||0)>=5},
+{id:'handle_with_care',name:'Handle With Care',icon:'\uD83E\uDDF4',desc:'Return a Beezer demo with 0 damage',hint:'Be gentle with demos',xp:50,check:null},
+{id:'customer_thief',name:'Customer Thief',icon:'\uD83D\uDD75\uFE0F',desc:'Steal 5 customers from competitors',hint:'Win competitor customers',xp:70,check:g=>(g.customersStolen||0)>=5},
+{id:'riddle_master',name:'Riddle Master',icon:'\uD83E\uDDE0',desc:'Answer 5 lawn riddles correctly',hint:'Ace the riddles',xp:50,check:g=>(g.riddlesCorrect||0)>=5}
 ];
 
 // Employee lawn caps by level
@@ -747,6 +810,46 @@ fall_leaf: [
 const COMPETITOR_NAMES_ACTIONS = [
 'outbid you on','snatched','stole','took over'
 ];
+const COMPETITOR_COLORS = ['#e06040','#3a7bd5','#e0a020'];
+
+// Salesman Beezer data
+const BEEZER_PITCHES = [
+"Well howdy there, partner! Salesman Beezer here, and BOY do I have a machine for you today!",
+"Yeehaw! It's your favorite mower salesman! I brought somethin' special from the showroom floor!",
+"Hey hey hey! Beezer's back and I've got a demo unit that's gonna blow your boots off!",
+"Mornin', friend! I was just tellin' my wife about your operation and I said, this person NEEDS to try this beauty!",
+"Hot diggity dog! Another week, another chance to put you in the seat of something MAGNIFICENT!",
+"Well slap my knee and call me impressed — your business is growin'! Time to upgrade that mower, don'tcha think?"
+];
+const BEEZER_FEATURES = [
+"This baby's got obstacle avoidance that'll make you feel like a NASCAR driver",
+"The deck width on this thing? You'll mow TWO lanes at once, partner",
+"Speed? This machine goes faster than my cousin at a buffet",
+"The reliability on this unit is top-notch — built like a tank, purrs like a kitten",
+"The efficiency rating on this model will save you enough gas money to buy me lunch"
+];
+const BEEZER_POST_DEMO = {
+pristine:"Well butter my biscuit, you brought it back in one piece! That's a first.",
+light:"A few scratches? That'll buff right out... probably.",
+heavy:"Dang, you drove that like you stole it! I gotta bring this to the shop before I let anyone else demo it.",
+destroyed:"Sweet mother of mulch... I am NOT letting you near the Country Clipper."
+};
+
+// Riddles for Charm Offensive
+const LAWN_RIDDLES = [
+{q:"What has blades but never cuts hair?",a:"A lawn mower",opts:["A lawn mower","A helicopter","A fan","A sword"]},
+{q:"I get shorter the more I grow. What am I?",a:"Grass being mowed",opts:["Grass being mowed","A candle","A pencil","A shadow"]},
+{q:"What do you call a lawn mower that works out?",a:"A grass-cutter that's ripped",opts:["A grass-cutter that's ripped","A buff blade","A lawn jock","A muscle mower"]},
+{q:"Why did the gardener plant light bulbs?",a:"He wanted a power plant",opts:["He wanted a power plant","He liked bright ideas","To grow electricity","For night gardening"]},
+{q:"What's a lawn's favorite type of music?",a:"Bluegrass",opts:["Bluegrass","Rock","Heavy metal","Country"]},
+{q:"Why was the lawn mower laughing?",a:"It was cutting up",opts:["It was cutting up","It hit a funny bone","It was on a roll","The grass tickled it"]},
+{q:"What did the grass say to the lawn mower?",a:"Are you stalking me?",opts:["Are you stalking me?","Leave me alone","Stop cutting in","I'm rooted here"]},
+{q:"Why did the scarecrow become a successful lawn care pro?",a:"He was outstanding in his field",opts:["He was outstanding in his field","He never took breaks","He scared away pests","He was made of straw"]},
+{q:"What's green and sings?",a:"Elvis Parsley",opts:["Elvis Parsley","A frog choir","Grass karaoke","A singing cactus"]},
+{q:"What do you call a lazy person's lawn?",a:"A 'mow-later' zone",opts:["A 'mow-later' zone","A jungle","A meadow","A nature preserve"]},
+{q:"What's a lawn mower's favorite sport?",a:"Grass hockey",opts:["Grass hockey","Soccer","Cricket","Croquet"]},
+{q:"Why don't lawns ever win arguments?",a:"They always get cut down",opts:["They always get cut down","They're too green","They can't stand up","They're too flat"]}
+];
 
 let G = null; // game state
 
@@ -809,6 +912,18 @@ hasRoutePlanner: false,
 weeklyHistory: [],
 // Seasonal job tracking
 seasonalJobsDone: {Winter:0, Spring:0, Summer:0, Fall:0},
+// Beezer
+beezerVisitedThisWeek: false,
+beezerDemoMower: null,
+beezerDemoUsed: false,
+beezerDemosTotal: 0,
+beezerDemoDamage: 0,
+// Compete
+competeStealsThisWeek: 0,
+customersStolen: 0,
+riddlesCorrect: 0,
+competitorContracts: [],
+competitorRetaliation: [],
 };
 }
 
@@ -949,6 +1064,8 @@ G = defaultState(name);
 for(let i=0;i<3;i++) G.contracts.push(generateContract());
 // Generate some available contracts
 for(let i=0;i<2;i++) G.pendingContracts.push(generateContract());
+// Generate competitor contracts
+generateCompetitorContracts();
 saveGame();
 $('bottom-nav').style.display='flex';
 showScreen('dashboard');
@@ -1042,6 +1159,20 @@ if(G.hasRoutePlanner==null) G.hasRoutePlanner=false;
 if(!G.weeklyHistory) G.weeklyHistory=[];
 // Seasonal tracking
 if(!G.seasonalJobsDone) G.seasonalJobsDone={Winter:0,Spring:0,Summer:0,Fall:0};
+// Beezer defaults
+if(G.beezerVisitedThisWeek==null) G.beezerVisitedThisWeek=false;
+if(G.beezerDemoMower==null) G.beezerDemoMower=null;
+if(G.beezerDemoUsed==null) G.beezerDemoUsed=false;
+if(G.beezerDemosTotal==null) G.beezerDemosTotal=0;
+if(G.beezerDemoDamage==null) G.beezerDemoDamage=0;
+// Compete defaults
+if(G.competeStealsThisWeek==null) G.competeStealsThisWeek=0;
+if(G.customersStolen==null) G.customersStolen=0;
+if(G.riddlesCorrect==null) G.riddlesCorrect=0;
+if(!G.competitorContracts) G.competitorContracts=[];
+if(!G.competitorRetaliation) G.competitorRetaliation=[];
+// Add contracts to competitors if not present
+if(G.competitorContracts.length===0) generateCompetitorContracts();
 $('bottom-nav').style.display='flex';showScreen('dashboard');
 }
 }
@@ -1061,6 +1192,8 @@ $('btn-continue').style.display='inline-block';
 // ===== DASHBOARD =====
 function renderDashboard(){
 updateTopBar();
+// Check if Beezer should visit
+setTimeout(()=>checkBeezerVisit(), 300);
 const s = G.season;
 const icon = SEASON_ICONS[s]||'';
 const weatherLabel = G.weather.charAt(0).toUpperCase()+G.weather.slice(1);
@@ -1748,15 +1881,29 @@ renderEmployees();
 }
 
 // ===== MAP =====
+// Store pin positions for tap detection
+let mapPinData = [];
+let mapCanvasSize = 0;
+
 function renderMap(){
 updateTopBar();
 const canvas = $('map-canvas');
 const rect = canvas.parentElement.getBoundingClientRect();
 const size = Math.min(rect.width - 32, 500);
+mapCanvasSize = size;
 canvas.width = size * 2; canvas.height = size * 2;
 canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
 const ctx = canvas.getContext('2d');
 ctx.scale(2, 2);
+mapPinData = [];
+
+// Company label above map
+const existingLabel = $('map-screen').querySelector('.map-company-label');
+if(existingLabel) existingLabel.remove();
+const labelDiv = document.createElement('div');
+labelDiv.className = 'map-company-label';
+labelDiv.textContent = (G.companyName||G.playerName+"'s Lawn Care") + ' — Town Map';
+$('map-screen').insertBefore(labelDiv, canvas);
 
 // Background
 ctx.fillStyle = '#c8e6c0';
@@ -1769,7 +1916,6 @@ const p=size*i/5;
 ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,size);ctx.stroke();
 ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(size,p);ctx.stroke();
 }
-// Road center lines
 ctx.strokeStyle='#e8e0c8'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
 for(let i=0;i<6;i++){
 const p=size*i/5;
@@ -1778,7 +1924,7 @@ ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(size,p);ctx.stroke();
 }
 ctx.setLineDash([]);
 
-// Decorative background houses (fixed positions)
+// Decorative background houses
 const housePositions = [[0.12,0.15],[0.35,0.08],[0.7,0.2],[0.85,0.45],[0.15,0.55],[0.6,0.7],[0.9,0.85],[0.25,0.82],[0.55,0.4],[0.78,0.62]];
 housePositions.forEach(([fx,fy])=>{
 const hx=fx*size, hy=fy*size;
@@ -1788,10 +1934,62 @@ ctx.fillStyle='#b44';
 ctx.beginPath();ctx.moveTo(hx-1,hy);ctx.lineTo(hx+5,hy-4);ctx.lineTo(hx+11,hy);ctx.fill();
 });
 
-// Route Planner: draw optimized route lines (nearest-neighbor)
+// Draw competitor territory zones (semi-transparent circles around clusters)
+const compColors = COMPETITOR_COLORS;
+(G.competitors||[]).forEach((comp,ci)=>{
+const color = compColors[ci % compColors.length];
+const compContracts = (G.competitorContracts||[]).filter(cc=>cc.competitorId===comp.id);
+if(compContracts.length === 0) return;
+// Calculate centroid
+let sumX=0, sumY=0;
+compContracts.forEach(cc=>{sumX+=(cc.mapX/300)*size; sumY+=(cc.mapY/300)*size;});
+const centX = sumX/compContracts.length;
+const centY = sumY/compContracts.length;
+// Calculate radius from furthest pin
+let maxDist = 0;
+compContracts.forEach(cc=>{
+const dx=(cc.mapX/300)*size-centX, dy=(cc.mapY/300)*size-centY;
+maxDist = Math.max(maxDist, Math.sqrt(dx*dx+dy*dy));
+});
+const r = Math.max(25, maxDist + 18);
+ctx.globalAlpha = 0.08;
+ctx.fillStyle = color;
+ctx.beginPath();ctx.arc(centX, centY, r, 0, Math.PI*2);ctx.fill();
+ctx.globalAlpha = 0.25;
+ctx.strokeStyle = color;
+ctx.lineWidth = 1.5;
+ctx.setLineDash([4,3]);
+ctx.beginPath();ctx.arc(centX, centY, r, 0, Math.PI*2);ctx.stroke();
+ctx.setLineDash([]);
+ctx.globalAlpha = 1;
+});
+
+// Draw player territory zone (green)
+if(G.contracts.length >= 2){
+let sumX=0, sumY=0;
+G.contracts.forEach(c=>{sumX+=(c.mapX/300)*size; sumY+=(c.mapY/300)*size;});
+const centX = sumX/G.contracts.length, centY = sumY/G.contracts.length;
+let maxDist = 0;
+G.contracts.forEach(c=>{
+const dx=(c.mapX/300)*size-centX, dy=(c.mapY/300)*size-centY;
+maxDist = Math.max(maxDist, Math.sqrt(dx*dx+dy*dy));
+});
+const r = Math.max(25, maxDist + 18);
+ctx.globalAlpha = 0.06;
+ctx.fillStyle = '#2d5a27';
+ctx.beginPath();ctx.arc(centX, centY, r, 0, Math.PI*2);ctx.fill();
+ctx.globalAlpha = 0.2;
+ctx.strokeStyle = '#4a8c3f';
+ctx.lineWidth = 1.5;
+ctx.setLineDash([4,3]);
+ctx.beginPath();ctx.arc(centX, centY, r, 0, Math.PI*2);ctx.stroke();
+ctx.setLineDash([]);
+ctx.globalAlpha = 1;
+}
+
+// Route Planner lines
 if(G.hasRoutePlanner && G.contracts.length >= 2){
 const hqX = size/2, hqY = size/2;
-// Build route using nearest-neighbor
 const allPts = G.contracts.map(c=>({x:(c.mapX/300)*size, y:(c.mapY/300)*size, id:c.id}));
 const route = [];
 const visited = new Set();
@@ -1808,20 +2006,12 @@ route.push(best);
 visited.add(best.id);
 cx=best.x; cy=best.y;
 }
-// Draw route lines
 ctx.strokeStyle='rgba(26,86,219,0.5)'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]);
 ctx.beginPath();
 ctx.moveTo(hqX, hqY);
-let totalRouteDist = 0;
-let prevX = hqX, prevY = hqY;
-route.forEach(p=>{
-ctx.lineTo(p.x, p.y);
-totalRouteDist += Math.sqrt((p.x-prevX)**2+(p.y-prevY)**2);
-prevX=p.x; prevY=p.y;
-});
+route.forEach(p=>{ctx.lineTo(p.x, p.y);});
 ctx.stroke();
 ctx.setLineDash([]);
-// Route numbers
 route.forEach((p,i)=>{
 ctx.fillStyle='rgba(26,86,219,0.8)';
 ctx.font='bold 6px Inter';ctx.textAlign='center';
@@ -1836,16 +2026,15 @@ ctx.strokeStyle='#fff';ctx.lineWidth=2;
 ctx.beginPath();ctx.arc(size/2,size/2,10,0,Math.PI*2);ctx.stroke();
 ctx.fillStyle='#fff';ctx.font='bold 7px Inter';ctx.textAlign='center';
 ctx.fillText('HQ',size/2,size/2+2.5);
-// Company label near HQ
 ctx.fillStyle='#2d5a27';ctx.font='bold 6px Inter';
 ctx.fillText(G.companyName||G.playerName+"'s Lawn Care",size/2,size/2+18);
 
-// Contract pins
+// Player contract pins (green)
 G.contracts.forEach(c=>{
 const x = (c.mapX/300)*size;
 const y = (c.mapY/300)*size;
 const mowed = G.weeklyMowed[c.id];
-ctx.fillStyle = mowed?'#4a8c3f':'#cc3333';
+ctx.fillStyle = mowed?'#4a8c3f':'#6db85a';
 ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();
 ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
 ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.stroke();
@@ -1853,6 +2042,22 @@ ctx.fillStyle='#fff';
 ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
 ctx.fillStyle='#1a2e1a';ctx.font='bold 6px Inter';ctx.textAlign='center';
 ctx.fillText(c.customerName.split(' ')[1],x,y-9);
+});
+
+// Competitor contract pins (colored per competitor) — tappable
+(G.competitorContracts||[]).forEach((cc,idx)=>{
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+const ci = (G.competitors||[]).indexOf(comp);
+const color = compColors[ci>=0?ci%compColors.length:0];
+const x = (cc.mapX/300)*size;
+const y = (cc.mapY/300)*size;
+ctx.fillStyle = color;
+ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=1;
+ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.stroke();
+ctx.fillStyle='#333';ctx.font='5px Inter';ctx.textAlign='center';
+ctx.fillText(cc.customerName.split(' ')[1],x,y-8);
+mapPinData.push({x,y,idx,type:'competitor'});
 });
 
 // Seasonal contract pins
@@ -1867,33 +2072,35 @@ ctx.fillStyle='#1a2e1a';ctx.font='6px Inter';ctx.textAlign='center';
 ctx.fillText(sc.label.split(' ')[0],x,y-8);
 });
 
-// Competitor HQs
+// Competitor HQ markers
 (G.competitors||[]).forEach((comp,i)=>{
 const positions = [[size*0.15,size*0.15],[size*0.85,size*0.2],[size*0.8,size*0.85]];
 const [cx2,cy2] = positions[i] || [size*0.5,size*0.1];
-ctx.fillStyle='#d44';
+const color = compColors[i % compColors.length];
+ctx.fillStyle = color;
 ctx.beginPath();ctx.arc(cx2,cy2,7,0,Math.PI*2);ctx.fill();
 ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
 ctx.beginPath();ctx.arc(cx2,cy2,7,0,Math.PI*2);ctx.stroke();
 ctx.fillStyle='#fff';ctx.font='bold 5px Inter';ctx.textAlign='center';
 ctx.fillText(comp.icon,cx2,cy2+2);
-ctx.fillStyle='#721c24';ctx.font='5px Inter';
+ctx.fillStyle='#333';ctx.font='5px Inter';
 ctx.fillText(comp.name.split(' ')[0],cx2,cy2-10);
 });
 
-// Legend
-const ly = size - 40;
-ctx.fillStyle='rgba(255,255,255,0.9)';
-ctx.fillRect(5, ly-2, 135, 40);
-ctx.fillStyle='#cc3333';ctx.beginPath();ctx.arc(15,ly+6,4,0,Math.PI*2);ctx.fill();
-ctx.fillStyle='#1a2e1a';ctx.font='7px Inter';ctx.textAlign='left';
-ctx.fillText('Needs mowing',24,ly+9);
-ctx.fillStyle='#4a8c3f';ctx.beginPath();ctx.arc(15,ly+18,4,0,Math.PI*2);ctx.fill();
-ctx.fillStyle='#1a2e1a';ctx.fillText('Done',24,ly+21);
-ctx.fillStyle='#1a56db';ctx.beginPath();ctx.arc(15,ly+30,4,0,Math.PI*2);ctx.fill();
-ctx.fillStyle='#1a2e1a';ctx.fillText('Seasonal',24,ly+33);
-ctx.fillStyle='#d44';ctx.beginPath();ctx.arc(80,ly+6,4,0,Math.PI*2);ctx.fill();
-ctx.fillStyle='#1a2e1a';ctx.fillText('Competitor',89,ly+9);
+// Legend (bottom)
+const existingLegend = $('map-screen').querySelector('.map-legend');
+if(existingLegend) existingLegend.remove();
+let legendHtml = '<div class="map-legend">';
+legendHtml += '<div class="map-legend-item"><div class="map-legend-dot" style="background:#6db85a"></div>Your yards</div>';
+(G.competitors||[]).forEach((comp,i)=>{
+const color = compColors[i % compColors.length];
+legendHtml += `<div class="map-legend-item"><div class="map-legend-dot" style="background:${color}"></div>${comp.name.split(' ')[0]}</div>`;
+});
+legendHtml += '<div class="map-legend-item"><div class="map-legend-dot" style="background:#1a56db"></div>Seasonal</div>';
+legendHtml += '</div>';
+const legendDiv = document.createElement('div');
+legendDiv.innerHTML = legendHtml;
+$('map-screen').appendChild(legendDiv.firstChild);
 
 // Route planner savings info
 if(G.hasRoutePlanner){
@@ -1909,7 +2116,33 @@ const baseSavings = 10 + (G.skills ? getSkillEffect('routeMaster') * 100 : 0);
 infoEl.innerHTML=`\uD83D\uDDFA Route Planner Active — est. ${Math.round(baseSavings)}% gas savings this week`;
 }
 }
+
+// Steal counter
+const existingStealCounter = $('map-screen').querySelector('.steal-counter');
+if(existingStealCounter) existingStealCounter.remove();
+if((G.competitorContracts||[]).length > 0){
+const sc2 = document.createElement('div');
+sc2.className = 'steal-counter';
+sc2.innerHTML = `&#128506; Tap a competitor pin to compete for their customer (${G.competeStealsThisWeek||0}/2 this week)`;
+$('map-screen').appendChild(sc2);
 }
+}
+
+// Map tap handler — detect taps on competitor pins
+$('map-canvas').addEventListener('click', function(e){
+if(!G || mapPinData.length===0) return;
+const rect = this.getBoundingClientRect();
+const clickX = (e.clientX - rect.left) / rect.width * mapCanvasSize;
+const clickY = (e.clientY - rect.top) / rect.height * mapCanvasSize;
+let closest = null, closestDist = Infinity;
+mapPinData.forEach(pin=>{
+const d = Math.sqrt((pin.x-clickX)**2+(pin.y-clickY)**2);
+if(d < closestDist){closestDist=d;closest=pin;}
+});
+if(closest && closestDist < 15 && closest.type==='competitor'){
+showCompeteModal(closest.idx);
+}
+});
 
 // ===== MOWING MINI-GAME =====
 let mowState = null;
@@ -2325,9 +2558,19 @@ mowAnimFrame = requestAnimationFrame(mowLoop);
 function mowerDestroyed(){
 const ms = mowState;
 ms.done = true;
-if(ms.mower) ms.mower.health = 0;
-const repairCost = ms.mower ? fmt(Math.round(MOWERS.find(m=>m.id===ms.mower.id).price * 0.15)) : '$500';
+const isDemo = ms.mower && ms.mower._isDemo;
+if(ms.mower && !isDemo) ms.mower.health = 0;
+const repairCost = ms.mower && !isDemo ? fmt(Math.round(MOWERS.find(m=>m.id===ms.mower.id).price * 0.15)) : '$500';
 $('mow-complete').style.display='flex';
+if(isDemo){
+$('mow-complete').innerHTML = `
+<h2 style="color:var(--danger)">Demo Mower Destroyed!</h2>
+<div style="font-size:3rem;margin:12px 0">&#128165;</div>
+<div class="mow-stats">You destroyed Beezer's demo ${ms.mower?ms.mower.name:'mower'}!</div>
+<div class="mow-stats" style="margin-top:8px">Coverage: ${Math.round((ms.cutGrass/ms.totalGrass)*100)}%</div>
+<div class="mow-stats" style="color:#ffa;margin-top:4px">Beezer is NOT going to be happy...</div>
+<button onclick="exitMowing()">Face Beezer &#128556;</button>`;
+} else {
 $('mow-complete').innerHTML = `
 <h2 style="color:var(--danger)">Mower Destroyed!</h2>
 <div style="font-size:3rem;margin:12px 0">&#128165;</div>
@@ -2339,6 +2582,7 @@ $('mow-complete').innerHTML = `
 </div>
 <button onclick="exitMowingToShop()">Go to Shop 🔧</button>
 <button onclick="exitMowing()" style="background:rgba(255,255,255,.2);margin-top:8px">Back to Jobs</button>`;
+}
 saveGame();
 }
 
@@ -2541,9 +2785,9 @@ const airFilterDiscount = 1 - getMowerUpgradeEffect(ms.mower, 'gas');
 const gasCost = calcContractGasCost(c) * (1 + (throttleValue - 0.5) * 0.5) * airFilterDiscount;
 G.weekGas += gasCost;
 
-// Save mower health back to game state (remove upgrade boost)
-if(ms.mower){
-const gMower = G.mowers.find(m=>m.id===ms.mower.id && m.owned);
+// Save mower health back to game state (remove upgrade boost) — skip demo mowers
+if(ms.mower && !ms.mower._isDemo){
+const gMower = G.mowers.find(m=>m.id===ms.mower.id && m.owned && !m._isDemo);
 if(gMower){
 const hBoost = 1 + getMowerUpgradeEffect(gMower, 'health');
 gMower.health = Math.min(100, ms.mowerHealth / hBoost);
@@ -2555,10 +2799,13 @@ G.totalRepJobs++;
 G.totalRepScore += stars;
 G.reputation = clamp(G.totalRepScore / G.totalRepJobs, 1, 5);
 
+// Check if this was a Beezer demo
+const isDemo = ms.mower && ms.mower._isDemo;
+
 // Show complete overlay
 const starStr = '\u2B50'.repeat(stars) + '\u2606'.repeat(5-stars);
-const healthWarning = ms.mowerHealth < 25 ? '<div class="mow-stats" style="color:var(--danger)">&#9888; Mower critically damaged!</div>' :
-ms.mowerHealth < 50 ? '<div class="mow-stats" style="color:var(--warning)">&#9888; Mower needs repair</div>' : '';
+const healthWarning = (!isDemo && ms.mowerHealth < 25) ? '<div class="mow-stats" style="color:var(--danger)">&#9888; Mower critically damaged!</div>' :
+(!isDemo && ms.mowerHealth < 50) ? '<div class="mow-stats" style="color:var(--warning)">&#9888; Mower needs repair</div>' : '';
 $('mow-complete').style.display='flex';
 $('mow-complete').innerHTML = `
 <h2>Yard Complete!</h2>
@@ -2568,18 +2815,27 @@ $('mow-complete').innerHTML = `
 <div class="mow-stats">Gas Cost: ${fmt(gasCost)}</div>
 <div class="mow-stats">Mower Health: ${Math.round(ms.mowerHealth)}%${ms.damageThisRun>0?' (-'+ms.damageThisRun+'%)':''}</div>
 ${healthWarning}
+${isDemo ? '<div class="mow-stats" style="color:#1a56db">&#127775; Beezer Demo Mower</div>' : ''}
 ${timeBonus > 0 ? `<div class="mow-stats" style="color:#6db85a">Speed Bonus: +${fmt(timeBonus)}</div>` : ''}
-<button onclick="exitMowing()">Continue</button>
+<button onclick="exitMowing()">${isDemo ? 'Return to Beezer' : 'Continue'}</button>
 `;
 
 saveGame();
 }
 
 function exitMowing(){
+const wasDemo = mowState && mowState.mower && mowState.mower._isDemo;
+const demoDamage = mowState ? mowState.damageThisRun : 0;
+const demoHealth = mowState ? mowState.mowerHealth : 100;
 mowState = null;
 if(mowAnimFrame) cancelAnimationFrame(mowAnimFrame);
 $('bottom-nav').style.display='flex';
+if(wasDemo){
+showScreen('dashboard');
+setTimeout(()=>beezerPostDemo(demoDamage, demoHealth), 300);
+} else {
 showScreen('contracts');
+}
 }
 
 // ===== DYNAMIC JOYSTICK (spawn-on-touch) =====
@@ -3198,6 +3454,34 @@ if(G.season === 'Winter' && weekInSeason === 1){
 G.weekEvents.push({text:'Winter has arrived. Mowing stops, but snow plowing jobs are available!',type:'neutral'});
 }
 
+// === BEEZER RESET ===
+G.beezerVisitedThisWeek = false;
+G.beezerDemoMower = null;
+G.beezerDemoUsed = false;
+G.beezerDemoDamage = 0;
+
+// === COMPETE RESET ===
+G.competeStealsThisWeek = 0;
+
+// === COMPETITOR RETALIATION ===
+processCompetitorRetaliation();
+
+// === REFRESH COMPETITOR CONTRACTS ===
+// Add new contracts to competitors who lost some, and grow their portfolios
+(G.competitors||[]).forEach(comp=>{
+const existing = (G.competitorContracts||[]).filter(cc=>cc.competitorId===comp.id).length;
+const target = rng(2, 3 + comp.fleet);
+if(existing < target){
+const toAdd = Math.min(target - existing, 2);
+for(let i=0;i<toAdd;i++){
+const c = generateContract();
+c.competitorId = comp.id;
+c.competitorSatisfaction = rng(1,5);
+G.competitorContracts.push(c);
+}
+}
+});
+
 // Show summary
 showWeekSummary(revenue, seasonalRevenue, gasCost, wagesCost, maintenanceCost, insuranceCost, loanPayment, truckPay, websiteCost, adCost, net, empJobSummaries);
 saveGame();
@@ -3622,6 +3906,369 @@ pctx.beginPath();pctx.moveTo(cx,cy);pctx.arc(cx,cy,r,mowAngle,Math.PI*2);pctx.cl
 pctx.fillStyle = '#fff';
 pctx.beginPath();pctx.arc(cx,cy,25,0,Math.PI*2);pctx.fill();
 }, 50);
+}
+
+// ===== COMPETITOR CONTRACTS =====
+function generateCompetitorContracts(){
+if(!G) return;
+G.competitorContracts = [];
+(G.competitors||[]).forEach(comp=>{
+const count = rng(2, 3 + comp.fleet);
+for(let i=0;i<count;i++){
+const c = generateContract();
+c.competitorId = comp.id;
+c.competitorSatisfaction = rng(1,5);
+G.competitorContracts.push(c);
+}
+});
+}
+
+// ===== SALESMAN BEEZER =====
+let beezerDemoContractId = null;
+
+function checkBeezerVisit(){
+if(!G || G.beezerVisitedThisWeek || G.season==='Winter') return;
+// Find a mower one tier above the player's best
+const ownedIds = G.mowers.filter(m=>m.owned).map(m=>m.id);
+const bestOwned = G.mowers.filter(m=>m.owned).sort((a,b)=>b.efficiency-a.efficiency)[0];
+if(!bestOwned) return;
+const bestIdx = MOWERS.findIndex(m=>m.id===bestOwned.id);
+if(bestIdx >= MOWERS.length - 1) return; // already has the best
+const demoMower = MOWERS[bestIdx + 1];
+G.beezerDemoMower = demoMower.id;
+G.beezerDemoUsed = false;
+G.beezerDemoDamage = 0;
+G.beezerVisitedThisWeek = true;
+saveGame();
+showBeezerModal(demoMower);
+}
+
+function showBeezerModal(demoMower){
+const pitch = pick(BEEZER_PITCHES);
+const feature = pick(BEEZER_FEATURES);
+const unmowed = G.contracts.filter(c=>!G.weeklyMowed[c.id]);
+const hasUnmowed = unmowed.length > 0;
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="beezer-modal">
+<div class="beezer-avatar">\uD83E\uDD20</div>
+<div class="beezer-name">Salesman Beezer</div>
+<div class="beezer-title">Mower Sales Extraordinaire</div>
+<div class="beezer-speech">"${pitch}"</div>
+<div class="beezer-mower-card">
+<div class="bmc-name">${demoMower.name}</div>
+<div class="bmc-stats">${demoMower.desc} | Speed: ${demoMower.speed}mph | Deck: ${demoMower.deck}" | Avoidance: ${Math.round(demoMower.avoidance*100)}%</div>
+<div class="bmc-price">Retail: ${fmt(demoMower.price)}</div>
+</div>
+<div class="beezer-speech">"${feature}"</div>
+${hasUnmowed ? `<button class="beezer-btn primary" onclick="beezerTestDrive()">&#127793; Test Drive It!</button><br>` : '<div style="font-size:.8rem;color:var(--text-light);margin:8px 0">No unmowed yards for a test drive right now.</div>'}
+<button class="beezer-btn dismiss" onclick="closeModal()">Maybe later, Beezer</button>
+</div>`;
+showModal(html);
+}
+
+function beezerTestDrive(){
+closeModal();
+const unmowed = G.contracts.filter(c=>!G.weeklyMowed[c.id]);
+if(unmowed.length === 0) return;
+const contract = pick(unmowed);
+beezerDemoContractId = String(contract.id);
+// Start mowing with the demo mower temporarily
+const demoMowerDef = MOWERS.find(m=>m.id===G.beezerDemoMower);
+if(!demoMowerDef) return;
+// Temporarily add demo mower to player's mowers
+const demoMower = {...demoMowerDef, owned:true, condition:100, health:100, upgrades:[], _isDemo:true};
+G.mowers.push(demoMower);
+saveGame();
+startMowing(String(contract.id));
+}
+
+function beezerPostDemo(damageThisRun, mowerHealth){
+// Remove demo mower from inventory
+G.mowers = G.mowers.filter(m=>!m._isDemo);
+G.beezerDemoUsed = true;
+G.beezerDemoDamage = damageThisRun;
+G.beezerDemosTotal = (G.beezerDemosTotal||0) + 1;
+beezerDemoContractId = null;
+// Check achievements
+if(G.beezerDemosTotal >= 5) unlockAchievement('beezer_friend');
+if(damageThisRun === 0) unlockAchievement('handle_with_care');
+saveGame();
+// Show Beezer's reaction
+const demoMowerDef = MOWERS.find(m=>m.id===G.beezerDemoMower);
+let dmgLevel, dmgClass, comment;
+if(damageThisRun === 0){
+dmgLevel = 'pristine'; dmgClass = 'pristine'; comment = BEEZER_POST_DEMO.pristine;
+} else if(damageThisRun < 10){
+dmgLevel = 'light'; dmgClass = 'light'; comment = BEEZER_POST_DEMO.light;
+} else if(mowerHealth > 0){
+dmgLevel = 'heavy'; dmgClass = 'heavy'; comment = BEEZER_POST_DEMO.heavy;
+} else {
+dmgLevel = 'destroyed'; dmgClass = 'destroyed'; comment = BEEZER_POST_DEMO.destroyed;
+}
+const discountPrice = demoMowerDef ? Math.round(demoMowerDef.price * 0.95) : 0;
+const canAfford = G.cash >= discountPrice;
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="beezer-modal">
+<div class="beezer-avatar">\uD83E\uDD20</div>
+<div class="beezer-name">Salesman Beezer</div>
+<div class="beezer-damage-report ${dmgClass}">${comment}</div>
+${demoMowerDef ? `<div class="beezer-mower-card">
+<div class="bmc-name">${demoMowerDef.name}</div>
+<div class="bmc-stats">${demoMowerDef.desc}</div>
+<div class="bmc-price"><s style="color:var(--text-light)">${fmt(demoMowerDef.price)}</s> <span style="color:var(--success);font-weight:800">${fmt(discountPrice)}</span> <span style="font-size:.72rem;color:var(--success)">5% Beezer Discount!</span></div>
+</div>
+<button class="beezer-btn buy" ${!canAfford?'disabled style="opacity:.5"':''} onclick="beezerBuyMower()">&#128176; Buy Now — ${fmt(discountPrice)}</button><br>` : ''}
+<button class="beezer-btn dismiss" onclick="closeModal()">No thanks, Beezer</button>
+</div>`;
+showModal(html);
+}
+
+function beezerBuyMower(){
+const demoMowerDef = MOWERS.find(m=>m.id===G.beezerDemoMower);
+if(!demoMowerDef) return;
+const price = Math.round(demoMowerDef.price * 0.95);
+if(G.cash < price) return;
+G.cash -= price;
+G.mowers.push({...demoMowerDef, owned:true, condition:100, health:100, upgrades:[]});
+showToast(`Bought ${demoMowerDef.name} with Beezer's discount!`, '\uD83E\uDD20');
+saveGame();
+closeModal();
+}
+
+// ===== COMPETE FOR CUSTOMERS =====
+function showCompeteModal(contractIdx){
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+if(!comp) return;
+if((G.competeStealsThisWeek||0) >= 2){
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
+<h2>Weekly Limit Reached</h2><p style="font-size:.85rem;color:var(--text-light);margin-top:8px">You can only attempt 2 customer steals per week. Try again next week!</p>`);
+return;
+}
+const sat = cc.competitorSatisfaction||3;
+const satLabel = sat <= 2 ? 'Unhappy' : sat <= 3 ? 'Neutral' : 'Satisfied';
+const satColor = sat <= 2 ? 'var(--danger)' : sat <= 3 ? 'var(--warning)' : 'var(--success)';
+// Calculate base chances
+const baseSatChance = sat <= 2 ? 0.70 : sat <= 3 ? 0.50 : 0.20;
+const repDiff = G.reputation - comp.rep;
+const repChance = clamp(0.4 + repDiff * 0.15, 0.10, 0.85);
+const repChanceLabel = repChance >= 0.6 ? 'high' : repChance >= 0.4 ? 'medium' : 'low';
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="compete-modal">
+<h2>Win This Customer</h2>
+<div class="compete-customer">
+<div class="cc-name">${cc.customerName}</div>
+<div class="cc-details">${cc.address} | ${cc.label} | ${fmt(cc.price)}/wk</div>
+<div class="cc-details">Current provider: <b>${comp.icon} ${comp.name}</b></div>
+<div class="cc-details">Satisfaction: <span style="color:${satColor};font-weight:600">${satLabel} (${sat}/5 &#11088;)</span></div>
+</div>
+<div class="steal-counter">${G.competeStealsThisWeek||0}/2 steal attempts used this week</div>
+<div class="compete-tactic" onclick="competeUndercut(${contractIdx})">
+<div class="ct-name">&#128176; Undercut</div>
+<div class="ct-desc">Offer a lower price than ${comp.name}. Better discount = higher chance.</div>
+<div class="ct-chance medium">Base: ${Math.round(baseSatChance*100)}% (depends on your offer)</div>
+</div>
+<div class="compete-tactic" onclick="competeReputation(${contractIdx})">
+<div class="ct-name">&#11088; Reputation Challenge</div>
+<div class="ct-desc">Your rep: ${G.reputation.toFixed(1)} vs ${comp.name}: ${comp.rep.toFixed(1)}. ${repDiff>0?'You have the edge!':'They have a better rep.'}</div>
+<div class="ct-chance ${repChanceLabel}">${Math.round(repChance*100)}% chance</div>
+</div>
+<div class="compete-tactic" onclick="competeCharm(${contractIdx})">
+<div class="ct-name">&#129504; Charm Offensive</div>
+<div class="ct-desc">Answer a fun lawn trivia question. Get it right and you win the customer!</div>
+<div class="ct-chance high">Skill-based!</div>
+</div>
+</div>`;
+showModal(html);
+}
+
+function competeUndercut(contractIdx){
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+const sat = cc.competitorSatisfaction||3;
+const baseSatChance = sat <= 2 ? 0.70 : sat <= 3 ? 0.50 : 0.20;
+const maxDiscount = Math.round(cc.price * 0.30);
+const defaultDiscount = Math.round(cc.price * 0.10);
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="compete-modal">
+<h2>&#128176; Undercut ${comp?comp.name:'Competitor'}</h2>
+<div class="compete-customer">
+<div class="cc-name">${cc.customerName}</div>
+<div class="cc-details">Their price: <b>${fmt(cc.price)}/wk</b></div>
+</div>
+<div class="undercut-slider">
+<label style="font-size:.85rem;font-weight:600">Your offer:</label>
+<input type="range" min="${Math.round(cc.price*0.70)}" max="${cc.price}" value="${cc.price - defaultDiscount}" step="1"
+oninput="document.getElementById('undercut-display').textContent='$'+this.value+'/wk';
+document.getElementById('undercut-chance').textContent=Math.round((${baseSatChance}*0.7 + (1 - this.value/${cc.price})*2*0.3 + ${baseSatChance}*0.3)*100)+'%'">
+<div class="undercut-info">
+<span>Your price: <b id="undercut-display">${fmt(cc.price - defaultDiscount)}/wk</b></span>
+<span>Success: <b id="undercut-chance">${Math.round((baseSatChance*0.7 + (defaultDiscount/cc.price)*2*0.3 + baseSatChance*0.3)*100)}%</b></span>
+</div>
+</div>
+<button class="beezer-btn primary" onclick="executeUndercut(${contractIdx}, document.querySelector('.undercut-slider input').value)">Make Offer</button>
+<button class="beezer-btn dismiss" onclick="showCompeteModal(${contractIdx})">Back</button>
+</div>`;
+showModal(html);
+}
+
+function executeUndercut(contractIdx, offerPrice){
+offerPrice = parseInt(offerPrice);
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+const sat = cc.competitorSatisfaction||3;
+const baseSatChance = sat <= 2 ? 0.70 : sat <= 3 ? 0.50 : 0.20;
+const discount = 1 - offerPrice / cc.price;
+const chance = clamp(baseSatChance * 0.7 + discount * 2 * 0.3 + baseSatChance * 0.3, 0.10, 0.90);
+G.competeStealsThisWeek = (G.competeStealsThisWeek||0) + 1;
+const success = Math.random() < chance;
+if(success){
+competeWin(contractIdx, offerPrice);
+} else {
+competeFail(contractIdx, comp);
+}
+}
+
+function competeReputation(contractIdx){
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+const repDiff = G.reputation - (comp?comp.rep:3);
+const chance = clamp(0.4 + repDiff * 0.15, 0.10, 0.85);
+G.competeStealsThisWeek = (G.competeStealsThisWeek||0) + 1;
+const success = Math.random() < chance;
+if(success){
+competeWin(contractIdx, cc.price);
+} else {
+competeFail(contractIdx, comp);
+}
+}
+
+function competeCharm(contractIdx){
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+const riddle = pick(LAWN_RIDDLES);
+const shuffled = [...riddle.opts].sort(()=>Math.random()-0.5);
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="compete-modal">
+<h2>&#129504; Charm Offensive</h2>
+<div class="compete-customer">
+<div class="cc-name">${cc.customerName}</div>
+<div class="cc-details">Answer correctly to win them over!</div>
+</div>
+<div class="riddle-box">
+<div class="riddle-q">"${riddle.q}"</div>
+<div class="riddle-options">
+${shuffled.map(opt=>`<button class="riddle-opt" onclick="executeCharm(${contractIdx},'${opt.replace(/'/g,"\\'")}','${riddle.a.replace(/'/g,"\\'")}')">
+${opt}</button>`).join('')}
+</div>
+</div>
+</div>`;
+showModal(html);
+}
+
+function executeCharm(contractIdx, chosen, correct){
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+G.competeStealsThisWeek = (G.competeStealsThisWeek||0) + 1;
+if(chosen === correct){
+G.riddlesCorrect = (G.riddlesCorrect||0) + 1;
+if(G.riddlesCorrect >= 5) unlockAchievement('riddle_master');
+competeWin(contractIdx, cc.price);
+} else {
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="compete-result">
+<div class="cr-icon">&#128532;</div>
+<div class="cr-title">Wrong Answer!</div>
+<div class="cr-text">The answer was: "${correct}"<br>${cc.customerName} wasn't impressed.</div>
+<button class="beezer-btn dismiss" onclick="closeModal()">Oh well</button>
+</div>`;
+showModal(html);
+competeMayRetaliate(comp);
+saveGame();
+}
+}
+
+function competeWin(contractIdx, price){
+const cc = G.competitorContracts[contractIdx];
+if(!cc) return;
+const comp = (G.competitors||[]).find(c=>c.id===cc.competitorId);
+// Move from competitor to player
+const newContract = {...cc, price: price, satisfaction: 3, weeksActive: 0, loyaltyWeeks: 0};
+delete newContract.competitorId;
+delete newContract.competitorSatisfaction;
+G.contracts.push(newContract);
+G.competitorContracts.splice(contractIdx, 1);
+G.customersStolen = (G.customersStolen||0) + 1;
+if(G.customersStolen >= 5) unlockAchievement('customer_thief');
+// XP reward
+addXP(30, 'Won customer from ' + (comp?comp.name:'competitor'));
+showToast(`Stole ${cc.customerName} from ${comp?comp.name:'competitor'}!`, '\uD83D\uDD75\uFE0F');
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="compete-result">
+<div class="cr-icon">&#127881;</div>
+<div class="cr-title">Customer Won!</div>
+<div class="cr-text">${cc.customerName} is now your customer at ${fmt(price)}/wk!</div>
+<button class="beezer-btn primary" onclick="closeModal()">Awesome!</button>
+</div>`;
+showModal(html);
+competeMayRetaliate(comp);
+checkAchievements();
+saveGame();
+}
+
+function competeFail(contractIdx, comp){
+let html = `<button class="modal-close" onclick="closeModal()">&times;</button>
+<div class="compete-result">
+<div class="cr-icon">&#128546;</div>
+<div class="cr-title">No Luck</div>
+<div class="cr-text">The customer decided to stay with ${comp?comp.name:'their current provider'}. Better luck next time!</div>
+<button class="beezer-btn dismiss" onclick="closeModal()">Darn</button>
+</div>`;
+showModal(html);
+competeMayRetaliate(comp);
+saveGame();
+}
+
+function competeMayRetaliate(comp){
+if(!comp) return;
+// 30% chance competitor retaliates next week
+if(Math.random() < 0.30 && G.contracts.length > 0){
+if(!G.competitorRetaliation) G.competitorRetaliation = [];
+G.competitorRetaliation.push({competitorId: comp.id, week: G.week + 1});
+}
+}
+
+function processCompetitorRetaliation(){
+if(!G.competitorRetaliation || G.competitorRetaliation.length === 0 || G.contracts.length === 0) return;
+const due = G.competitorRetaliation.filter(r=>r.week <= G.week);
+G.competitorRetaliation = G.competitorRetaliation.filter(r=>r.week > G.week);
+due.forEach(r=>{
+const comp = (G.competitors||[]).find(c=>c.id===r.competitorId);
+if(!comp || G.contracts.length === 0) return;
+// Pick a random player contract to try to steal
+const target = pick(G.contracts);
+const chance = target.satisfaction <= 2 ? 0.50 : target.satisfaction <= 3 ? 0.25 : 0.10;
+if(Math.random() < chance){
+// Competitor steals the contract
+const stolen = G.contracts.find(c=>c.id===target.id);
+G.contracts = G.contracts.filter(c=>c.id !== target.id);
+G.employees.forEach(e=>{e.assignedContracts=e.assignedContracts.filter(cid=>String(cid)!==String(target.id))});
+if(stolen){
+const cc = {...stolen, competitorId: comp.id, competitorSatisfaction: rng(3,5)};
+G.competitorContracts.push(cc);
+}
+G.weekEvents.push({text:`${comp.name} stole ${target.customerName} from you in retaliation!`,type:'bad'});
+comp.steals++;
+} else {
+G.weekEvents.push({text:`${comp.name} tried to steal ${target.customerName} but your quality kept them loyal!`,type:'good'});
+}
+});
 }
 
 </script>
