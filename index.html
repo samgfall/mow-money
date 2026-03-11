@@ -2229,7 +2229,7 @@ $('throttle-area').style.display = 'block';
 const screenW = screen.clientWidth || window.innerWidth;
 const screenH = screen.clientHeight || window.innerHeight;
 // Yard scale: small=60%, medium=70%, large=80%, estate=90%, commercial=100%
-const yardScales = {small:0.60, medium:0.70, large:0.80, estate:0.90, commercial:1.0};
+const yardScales = {small:0.75, medium:0.80, large:0.88, estate:0.95, commercial:1.0};
 const yardScale = yardScales[c.type] || 0.75;
 const w = Math.round(screenW * yardScale);
 const h = Math.round(screenH * yardScale);
@@ -2297,8 +2297,8 @@ const bestMower = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).so
 const speedBoost = 1 + getMowerUpgradeEffect(bestMower, 'speed');
 const widthBoost = getMowerUpgradeEffect(bestMower, 'width');
 const healthBoost = 1 + getMowerUpgradeEffect(bestMower, 'health');
-const mowerSpeed = bestMower ? (bestMower.speed / 7) * 5.5 * speedBoost : 5; // faster base speed
-const mowerWidth = bestMower ? (bestMower.deck / 42) * 5 + widthBoost : 4; // wider cut path
+const mowerSpeed = bestMower ? (bestMower.speed / 7) * 5 * speedBoost : 4.5; // faster base speed
+const mowerWidth = bestMower ? (bestMower.deck / 42) * 3.5 + widthBoost : 3; // wider cut path
 
 const rawHealth = bestMower ? (bestMower.health != null ? bestMower.health : 100) : 100;
 const mowerHealth = Math.min(100 * healthBoost, rawHealth * healthBoost);
@@ -2444,7 +2444,7 @@ avoidDY += ms.py - obCY;
 }
 });
 // Check boundaries ahead
-const margin = ms.grassSize * 2;
+const margin = ms.grassSize * ms.mowerWidth;
 if(testX < margin){ needsAvoid = true; avoidDX += 1; }
 if(testX > ms.w - margin){ needsAvoid = true; avoidDX -= 1; }
 if(testY < ms.grassSize * Math.floor(ms.rows*0.1) + margin){ needsAvoid = true; avoidDY += 1; }
@@ -2489,9 +2489,10 @@ hitObstacle = true;
 }
 });
 
-// Boundary collision (fence/house)
-const hitBoundary = nx <= ms.grassSize || nx >= ms.w - ms.grassSize ||
-ny <= ms.grassSize * Math.floor(ms.rows*0.1) || ny >= ms.h - ms.grassSize;
+// Boundary collision (fence/house) — use mower radius for margin
+const bMargin = mowerR + 2;
+const hitBoundary = nx <= bMargin || nx >= ms.w - bMargin ||
+ny <= ms.grassSize * Math.floor(ms.rows*0.1) + bMargin || ny >= ms.h - bMargin;
 
 if(hitObstacle && now - ms.lastCollision > 500){
 ms.lastCollision = now;
@@ -3961,7 +3962,7 @@ G.competitorContracts.push(c);
 let beezerDemoContractId = null;
 
 function checkBeezerVisit(){
-if(!G || G.beezerVisitedThisWeek || G.season==='Winter') return;
+if(!G || G.beezerVisitedThisWeek || G.season==='Winter' || G.week <= 2) return;
 // Find a mower one tier above the player's best
 const ownedIds = G.mowers.filter(m=>m.owned).map(m=>m.id);
 const bestOwned = G.mowers.filter(m=>m.owned).sort((a,b)=>b.efficiency-a.efficiency)[0];
