@@ -1823,19 +1823,28 @@ $('joystick-touch-area').style.display = 'block';
 $('thumb-toggle-area').style.display = 'none';
 $('throttle-area').style.display = 'block';
 
-// Size canvas to full screen (accounting for safe areas on iPhone)
-const w = screen.clientWidth || window.innerWidth;
-const h = screen.clientHeight || window.innerHeight;
-canvas.width = w * 2;
-canvas.height = h * 2;
-canvas.style.width = w + 'px';
-canvas.style.height = h + 'px';
+// Size canvas — scale by yard type instead of always fullscreen
+const screenW = screen.clientWidth || window.innerWidth;
+const screenH = screen.clientHeight || window.innerHeight;
+// Yard scale: small=60%, medium=70%, large=80%, estate=90%, commercial=100%
+const yardScales = {small:0.60, medium:0.70, large:0.80, estate:0.90, commercial:1.0};
+const yardScale = yardScales[c.type] || 0.75;
+const w = Math.round(screenW * yardScale);
+const h = Math.round(screenH * yardScale);
+// Canvas always fills screen for rendering, but yard area is scaled
+canvas.width = screenW * 2;
+canvas.height = screenH * 2;
+canvas.style.width = screenW + 'px';
+canvas.style.height = screenH + 'px';
 canvas.style.top = '0';
+// Yard offset to center it
+const yardOffX = Math.round((screenW - w) / 2);
+const yardOffY = Math.round((screenH - h) / 2);
 
 // Generate yard
 const yardW = w;
 const yardH = h;
-const grassSize = 8; // size of each grass cell in canvas pixels (at 1x)
+const grassSize = 14; // larger cells = faster coverage
 const cols = Math.floor(yardW / grassSize);
 const rows = Math.floor(yardH / grassSize);
 
@@ -1853,6 +1862,10 @@ for(let r=0;r<houseH;r++) for(let cc=0;cc<cols;cc++) grass[r][cc]=0;
 // Fence borders
 for(let r=0;r<rows;r++){grass[r][0]=0;grass[r][cols-1]=0;}
 for(let cc=0;cc<cols;cc++){grass[rows-1][cc]=0;}
+// Auto-mow edges — pre-cut 2 rows along all borders (edging already done)
+for(let r=houseH;r<houseH+2&&r<rows;r++) for(let cc=1;cc<cols-1;cc++) if(grass[r][cc]===1) grass[r][cc]=2;
+for(let r=rows-3;r<rows-1&&r>=0;r++) for(let cc=1;cc<cols-1;cc++) if(grass[r][cc]===1) grass[r][cc]=2;
+for(let r=houseH;r<rows-1;r++){if(grass[r][1]===1) grass[r][1]=2; if(grass[r][2]===1) grass[r][2]=2; if(cols>3&&grass[r][cols-2]===1) grass[r][cols-2]=2; if(cols>4&&grass[r][cols-3]===1) grass[r][cols-3]=2;}
 
 // Obstacles
 const obstacles = [];
@@ -1882,19 +1895,24 @@ const bestMower = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).so
 const speedBoost = 1 + getMowerUpgradeEffect(bestMower, 'speed');
 const widthBoost = getMowerUpgradeEffect(bestMower, 'width');
 const healthBoost = 1 + getMowerUpgradeEffect(bestMower, 'health');
-const mowerSpeed = bestMower ? (bestMower.speed / 7) * 3 * speedBoost : 3;
-const mowerWidth = bestMower ? (bestMower.deck / 42) * 3 + widthBoost : 3;
+const mowerSpeed = bestMower ? (bestMower.speed / 7) * 5.5 * speedBoost : 5; // faster base speed
+const mowerWidth = bestMower ? (bestMower.deck / 42) * 5 + widthBoost : 4; // wider cut path
 
 const rawHealth = bestMower ? (bestMower.health != null ? bestMower.health : 100) : 100;
 const mowerHealth = Math.min(100 * healthBoost, rawHealth * healthBoost);
 const healthPenalty = mowerHealth < 50 ? 0.5 + (mowerHealth / 100) : 1;
 
+// Count pre-cut edge grass toward cutGrass
+let preCut = 0;
+for(let r=0;r<rows;r++) for(let cc=0;cc<cols;cc++) if(grass[r][cc]===2) preCut++;
+
 mowState = {
 contract: c,
 yardType: yt,
 canvas, w: yardW, h: yardH,
+yardOffX, yardOffY, screenW, screenH,
 grassSize, cols, rows, grass,
-totalGrass, cutGrass: 0,
+totalGrass, cutGrass: preCut,
 obstacles,
 mower: bestMower,
 mowerSpeed,
@@ -2157,7 +2175,7 @@ drawMowScene(ctx, ms);
 ctx.restore();
 
 // Check completion
-if(progress >= 0.95 && !ms.done){
+if(progress >= 0.88 && !ms.done){
 completeMowing();
 return;
 }
@@ -2193,6 +2211,12 @@ showScreen('shop');
 }
 
 function drawMowScene(ctx, ms){
+// Clear full screen first
+ctx.fillStyle='#1a2e1a';
+ctx.fillRect(0,0,ms.screenW||ms.w,ms.screenH||ms.h);
+// Offset to yard position
+ctx.save();
+ctx.translate(ms.yardOffX||0, ms.yardOffY||0);
 // Sky/ground
 ctx.fillStyle='#4a7a3a';
 ctx.fillRect(0,0,ms.w,ms.h);
@@ -2326,6 +2350,8 @@ ctx.beginPath();ctx.arc(mowerR*0.6+Math.sin(st)*3, -mowerR*0.3+Math.cos(st)*2-5,
 ctx.globalAlpha = 1;
 }
 ctx.restore();
+// Restore yard offset translation
+ctx.restore();
 }
 
 function formatTime(s){
@@ -2348,9 +2374,9 @@ const timeBonus = ms.timer < targetTime ? Math.round((targetTime - ms.timer) * 0
 
 // Stars rating (+ Green Thumb skill bonus)
 let stars = 3;
-if(cutPercent > 0.98) stars++;
+if(cutPercent > 0.95) stars++;
 if(ms.hitCount === 0 && ms.timer < targetTime * 1.5) stars++;
-if(cutPercent < 0.96) stars--;
+if(cutPercent < 0.90) stars--;
 if(ms.damageThisRun > 15) stars--;
 stars = clamp(stars, 1, 5);
 const greenBonus = getSkillEffect('greenThumb');
@@ -2571,8 +2597,8 @@ if(!mowState) return;
 const canvas = $('mow-canvas');
 const rect = canvas.getBoundingClientRect();
 // Convert screen coords to canvas coords
-const cx = (clientX - rect.left) / rect.width * mowState.w;
-const cy = (clientY - rect.top) / rect.height * mowState.h;
+const cx = (clientX - rect.left) / rect.width * (mowState.screenW||mowState.w) - (mowState.yardOffX||0);
+const cy = (clientY - rect.top) / rect.height * (mowState.screenH||mowState.h) - (mowState.yardOffY||0);
 const ddx = cx - mowState.px;
 const ddy = cy - mowState.py;
 const dist = Math.sqrt(ddx*ddx + ddy*ddy);
