@@ -830,14 +830,29 @@ const BEEZER_PITCHES = [
 "Hey hey hey! Beezer's back and I've got a demo unit that's gonna blow your boots off!",
 "Mornin', friend! I was just tellin' my wife about your operation and I said, this person NEEDS to try this beauty!",
 "Hot diggity dog! Another week, another chance to put you in the seat of something MAGNIFICENT!",
-"Well slap my knee and call me impressed — your business is growin'! Time to upgrade that mower, don'tcha think?"
+"Well slap my knee and call me impressed — your business is growin'! Time to upgrade that mower, don'tcha think?",
+"I drove this thing over from the dealership myself and let me tell you — I may have shed a tear. It's THAT good.",
+"Partner, I've sold mowers to kings, queens, and three different county fair champions. This one? My FAVORITE.",
+"You know what the difference between a good lawn and a GREAT lawn is? About sixty inches of Country Clipper, that's what!",
+"I wasn't gonna come by this week, but then I saw your yards and I thought — this person DESERVES better equipment!",
+"Between you and me? My manager doesn't know I'm offering this deal. So let's keep it between us lawn professionals.",
+"I had a dream about your business last night. You were mowing with THIS machine and there were actual fireworks.",
+"They say money can't buy happiness, but have you ever seen someone frown on a Country Clipper? I rest my case.",
+"My daddy always said — son, never trust a man who doesn't take care of his mower. And YOUR mower needs an upgrade!",
+"I brought donuts! Well, I ate 'em on the way over. But I DID bring this beautiful machine for you to try!"
 ];
 const BEEZER_FEATURES = [
 "This baby's got obstacle avoidance that'll make you feel like a NASCAR driver",
 "The deck width on this thing? You'll mow TWO lanes at once, partner",
 "Speed? This machine goes faster than my cousin at a buffet",
 "The reliability on this unit is top-notch — built like a tank, purrs like a kitten",
-"The efficiency rating on this model will save you enough gas money to buy me lunch"
+"The efficiency rating on this model will save you enough gas money to buy me lunch",
+"The turning radius? Tighter than my uncle's wallet at Christmas. And that's saying something!",
+"I put this thing through a test course with fourteen garden gnomes. Didn't clip a single one!",
+"You could mow a football field in the time it takes your current rig to do a backyard",
+"This mower has more torque than my ex-wife's opinion. And THAT is saying something!",
+"The blade system on this bad boy? Self-sharpening. It's basically a genius with a grass allergy.",
+"Customer satisfaction on this model is ninety-eight percent. The other two percent? They bought two."
 ];
 const BEEZER_POST_DEMO = {
 pristine:"Well butter my biscuit, you brought it back in one piece! That's a first.",
@@ -859,7 +874,19 @@ const LAWN_RIDDLES = [
 {q:"What's green and sings?",a:"Elvis Parsley",opts:["Elvis Parsley","A frog choir","Grass karaoke","A singing cactus"]},
 {q:"What do you call a lazy person's lawn?",a:"A 'mow-later' zone",opts:["A 'mow-later' zone","A jungle","A meadow","A nature preserve"]},
 {q:"What's a lawn mower's favorite sport?",a:"Grass hockey",opts:["Grass hockey","Soccer","Cricket","Croquet"]},
-{q:"Why don't lawns ever win arguments?",a:"They always get cut down",opts:["They always get cut down","They're too green","They can't stand up","They're too flat"]}
+{q:"Why don't lawns ever win arguments?",a:"They always get cut down",opts:["They always get cut down","They're too green","They can't stand up","They're too flat"]},
+{q:"What do you get when you cross a lawn mower with a dog?",a:"A mow-tt",opts:["A mow-tt","A bark cutter","A grass hound","A lawn retriever"]},
+{q:"Why did the lawn mower go to therapy?",a:"It had too many breakdowns",opts:["It had too many breakdowns","It was feeling dull","It couldn't handle the pressure","It was spinning out"]},
+{q:"What's a lawn care worker's favorite dance?",a:"The mow-tion",opts:["The mow-tion","The grass slide","The blade runner","The lawn shuffle"]},
+{q:"Why did the grass go to the doctor?",a:"It was feeling a little green",opts:["It was feeling a little green","It had a bad cut","It was under the weather","It needed a trim"]},
+{q:"What did one blade of grass say to another during a drought?",a:"I'm rooting for rain",opts:["I'm rooting for rain","This blows","We're toast","Stay hydrated"]},
+{q:"Why are lawn mowers terrible at keeping secrets?",a:"They always spill the clippings",opts:["They always spill the clippings","They're too loud","They cut corners","They can't keep it together"]},
+{q:"What's a weed's favorite pickup line?",a:"I'm growing on you",opts:["I'm growing on you","Let's stick together","You're un-be-leaf-able","I dig you"]},
+{q:"Why did the homeowner break up with their lawn service?",a:"They were cutting corners",opts:["They were cutting corners","Too much baggage","They kept ghosting","The relationship was patchy"]},
+{q:"What do you call a cow that does lawn care?",a:"A moo-er",opts:["A moo-er","A grass grazer","A lawn bovine","A cud cutter"]},
+{q:"Why was the zero-turn mower so popular?",a:"It really turned heads",opts:["It really turned heads","It was well-rounded","It had no direction","It was spinning out of control"]},
+{q:"What's the lawn mower's motto?",a:"Cut above the rest",opts:["Cut above the rest","Go with the flow","Keep it short","Stay grounded"]},
+{q:"Why don't lawn mowers ever get lost?",a:"They always follow the cutting edge",opts:["They always follow the cutting edge","They stick to the path","They have great direction","They're always grounded"]}
 ];
 
 let G = null; // game state
@@ -928,6 +955,7 @@ beezerVisitedThisWeek: false,
 beezerDemoMower: null,
 beezerDemoUsed: false,
 beezerDemosTotal: 0,
+beezerLastVisitWeek: 0,
 beezerDemoDamage: 0,
 // Compete
 competeStealsThisWeek: 0,
@@ -2298,7 +2326,7 @@ const speedBoost = 1 + getMowerUpgradeEffect(bestMower, 'speed');
 const widthBoost = getMowerUpgradeEffect(bestMower, 'width');
 const healthBoost = 1 + getMowerUpgradeEffect(bestMower, 'health');
 const mowerSpeed = bestMower ? (bestMower.speed / 7) * 5 * speedBoost : 4.5; // faster base speed
-const mowerWidth = bestMower ? (bestMower.deck / 42) * 3.5 + widthBoost : 3; // wider cut path
+const mowerWidth = bestMower ? (bestMower.deck / 42) * 3.0 + widthBoost : 2.5; // base width (scales with throttle)
 
 const rawHealth = bestMower ? (bestMower.health != null ? bestMower.health : 100) : 100;
 const mowerHealth = Math.min(100 * healthBoost, rawHealth * healthBoost);
@@ -2437,9 +2465,10 @@ const speedMult = (0.3 + throttleValue * 1.4) * ms.healthPenalty * boost;
 const currentSpeed = ms.baseMowerSpeed * speedMult;
 ms.mowerSpeed = currentSpeed;
 
-// Wider mowing path at higher throttle
-const widthBonus = throttleValue > 0.7 ? Math.round((throttleValue - 0.7) * 3) : 0;
-ms.mowerWidth = ms.baseMowerWidth + widthBonus;
+// Mower size scales with throttle — slow = narrow (squeeze between obstacles), fast = wide cut
+// At 0% throttle: 60% of base width. At 50% throttle: 100% base. At 100%: 140% base.
+const widthScale = 0.6 + throttleValue * 0.8;
+ms.mowerWidth = Math.max(1, Math.round(ms.baseMowerWidth * widthScale));
 
 // Drift at high speed
 const driftAmount = throttleValue > 0.7 ? (throttleValue - 0.7) * 0.15 : 0;
@@ -4007,17 +4036,24 @@ let beezerDemoContractId = null;
 
 function checkBeezerVisit(){
 if(!G || G.beezerVisitedThisWeek || G.season==='Winter' || G.week <= 2) return;
-// Find a mower one tier above the player's best
-const ownedIds = G.mowers.filter(m=>m.owned).map(m=>m.id);
-const bestOwned = G.mowers.filter(m=>m.owned).sort((a,b)=>b.efficiency-a.efficiency)[0];
-if(!bestOwned) return;
-const bestIdx = MOWERS.findIndex(m=>m.id===bestOwned.id);
-if(bestIdx >= MOWERS.length - 1) return; // already has the best
-const demoMower = MOWERS[bestIdx + 1];
+// Already owns the Country Clipper? Beezer has nothing left to sell
+const ownsCountryClipper = G.mowers.some(m=>m.id==='country_boss' && m.owned);
+if(ownsCountryClipper) return;
+// Beezer visits every 2-3 weeks randomly (not every week)
+if(!G.beezerLastVisitWeek) G.beezerLastVisitWeek = 0;
+const weeksSinceVisit = G.week - G.beezerLastVisitWeek;
+const minGap = 2; // at least 2 weeks between visits
+if(weeksSinceVisit < minGap) return;
+// After min gap, 50% chance each week (avg ~3 week gap)
+if(weeksSinceVisit < 4 && Math.random() > 0.5) return;
+// Always demo the Country Clipper Boss XL — the crown jewel
+const demoMower = MOWERS.find(m=>m.id==='country_boss');
+if(!demoMower) return;
 G.beezerDemoMower = demoMower.id;
 G.beezerDemoUsed = false;
 G.beezerDemoDamage = 0;
 G.beezerVisitedThisWeek = true;
+G.beezerLastVisitWeek = G.week;
 saveGame();
 showBeezerModal(demoMower);
 }
