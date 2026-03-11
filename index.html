@@ -721,8 +721,19 @@ const ACHIEVEMENTS = [
 {id:'beezer_friend',name:"Beezer's Best Friend",icon:'\uD83E\uDD20',desc:'Demo 5 mowers from Beezer',hint:'Demo mowers from Beezer',xp:60,check:g=>(g.beezerDemosTotal||0)>=5},
 {id:'handle_with_care',name:'Handle With Care',icon:'\uD83E\uDDF4',desc:'Return a Beezer demo with 0 damage',hint:'Be gentle with demos',xp:50,check:null},
 {id:'customer_thief',name:'Customer Thief',icon:'\uD83D\uDD75\uFE0F',desc:'Steal 5 customers from competitors',hint:'Win competitor customers',xp:70,check:g=>(g.customersStolen||0)>=5},
-{id:'riddle_master',name:'Riddle Master',icon:'\uD83E\uDDE0',desc:'Answer 5 lawn riddles correctly',hint:'Ace the riddles',xp:50,check:g=>(g.riddlesCorrect||0)>=5}
+{id:'riddle_master',name:'Riddle Master',icon:'\uD83E\uDDE0',desc:'Answer 5 lawn riddles correctly',hint:'Ace the riddles',xp:50,check:g=>(g.riddlesCorrect||0)>=5},
+{id:'road_runner',name:'Road Runner',icon:'\uD83C\uDFC3',desc:'Complete 10 bonus runs',hint:'Do bonus runs each week',xp:60,check:g=>(g.bonusRunsCompleted||0)>=10},
+{id:'perfect_run',name:'Perfect Run',icon:'\uD83D\uDCAB',desc:'Complete a bonus run with 0 obstacles hit',hint:'Dodge everything',xp:75,check:null}
 ];
+
+// Runner mower abilities for Bonus Run
+const RUNNER_MOWER_ABILITIES = {
+toro42: {name:'None',desc:'No special ability. Wide hitbox, slow speed.',speed:1,hitbox:1.3,special:null},
+gravely52: {name:'Steady',desc:'Brief slow-mo near obstacles (3 uses/run)',speed:1.15,hitbox:1,special:'steady',uses:3},
+scag_tiger: {name:'Smart Collect',desc:'Auto-collects bonus items in adjacent lanes',speed:1.25,hitbox:1,special:'smart_collect'},
+grasshopper: {name:'Smooth Ride',desc:'No speed penalty from obstacle hits',speed:1.4,hitbox:1,special:'smooth_ride'},
+country_boss: {name:'Boss Mode',desc:'Magnetic coin pull, auto-dodge 1 obstacle, cuts 3 lanes',speed:1.55,hitbox:0.8,special:'boss_mode',autoDodges:1}
+};
 
 // Employee lawn caps by level
 const EMP_LAWN_CAPS = {Rookie:3, Experienced:5, Expert:7};
@@ -924,6 +935,10 @@ customersStolen: 0,
 riddlesCorrect: 0,
 competitorContracts: [],
 competitorRetaliation: [],
+// Bonus Run
+bonusRunUsedThisWeek: false,
+bonusRunsCompleted: 0,
+bonusRunGasDiscount: 0,
 };
 }
 
@@ -1171,6 +1186,10 @@ if(G.customersStolen==null) G.customersStolen=0;
 if(G.riddlesCorrect==null) G.riddlesCorrect=0;
 if(!G.competitorContracts) G.competitorContracts=[];
 if(!G.competitorRetaliation) G.competitorRetaliation=[];
+// Bonus Run defaults
+if(G.bonusRunUsedThisWeek==null) G.bonusRunUsedThisWeek=false;
+if(G.bonusRunsCompleted==null) G.bonusRunsCompleted=0;
+if(G.bonusRunGasDiscount==null) G.bonusRunGasDiscount=0;
 // Add contracts to competitors if not present
 if(G.competitorContracts.length===0) generateCompetitorContracts();
 $('bottom-nav').style.display='flex';showScreen('dashboard');
@@ -1274,6 +1293,17 @@ $('action-cards').innerHTML = `
 <div class="ac-info"><div class="ac-title">Analytics</div><div class="ac-desc">Business performance data</div></div>
 <div class="ac-arrow">&#8250;</div>
 </div>
+${G.bonusRunUsedThisWeek ?
+`<div class="action-card" style="opacity:.5;pointer-events:none">
+<div class="ac-icon" style="background:#e0e0e0">&#127939;</div>
+<div class="ac-info"><div class="ac-title">Bonus Run</div><div class="ac-desc">Used this week — resets next week</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>` :
+`<div class="action-card" onclick="showBonusRunPreScreen()" style="border:2px solid var(--green-mid)">
+<div class="ac-icon" style="background:linear-gradient(135deg,#fff3cd,#ffeaa0)">&#127939;</div>
+<div class="ac-info"><div class="ac-title">Bonus Run</div><div class="ac-desc">Quick runner challenge for bonus cash & XP</div></div>
+<div class="ac-arrow">&#8250;</div>
+</div>`}
 `;
 
 // Competitors section
@@ -3463,6 +3493,10 @@ G.beezerDemoDamage = 0;
 // === COMPETE RESET ===
 G.competeStealsThisWeek = 0;
 
+// === BONUS RUN RESET ===
+G.bonusRunUsedThisWeek = false;
+G.bonusRunGasDiscount = 0;
+
 // === COMPETITOR RETALIATION ===
 processCompetitorRetaliation();
 
@@ -4270,6 +4304,756 @@ G.weekEvents.push({text:`${comp.name} tried to steal ${target.customerName} but 
 }
 });
 }
+
+// ===== BONUS RUN (Runner Side-Game) =====
+let bonusRunState = null;
+let bonusRunAnimFrame = null;
+
+function showBonusRunPreScreen(){
+if(!G || G.bonusRunUsedThisWeek) return;
+const bestMower = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).sort((a,b)=>b.efficiency-a.efficiency)[0];
+if(!bestMower){
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button><h2>No Working Mower!</h2><p>You need a functional mower for the Bonus Run.</p>`);
+return;
+}
+const ability = RUNNER_MOWER_ABILITIES[bestMower.id] || RUNNER_MOWER_ABILITIES.toro42;
+const healthPct = Math.round(bestMower.health||100);
+const healthNote = healthPct < 50 ? `<div style="color:var(--danger);font-size:.8rem;margin-top:4px">Damaged mower = slower start speed!</div>` : '';
+showModal(`<button class="modal-close" onclick="closeModal()">&times;</button>
+<div style="text-align:center">
+<div style="font-size:2.5rem;margin-bottom:8px">&#127939;</div>
+<h2>Bonus Run</h2>
+<p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px">Dodge obstacles, collect bonuses, earn cash & XP!</p>
+<div style="background:var(--green-pale);border-radius:var(--radius);padding:12px;margin-bottom:12px;text-align:left">
+<div style="font-weight:700;font-size:.9rem">${bestMower.name}</div>
+<div style="font-size:.78rem;color:var(--text-light);margin-top:4px">Health: ${healthPct}% | Speed Tier: ${ability.speed}x</div>
+${healthNote}
+<div style="margin-top:8px;padding:8px;background:#fff;border-radius:8px;border:1px solid var(--green-mid)">
+<div style="font-weight:700;font-size:.8rem;color:var(--green-dark)">&#9889; ${ability.name}</div>
+<div style="font-size:.75rem;color:var(--text-light);margin-top:2px">${ability.desc}</div>
+</div>
+</div>
+<div style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">
+<b>Controls:</b> Tap left/right side to switch lanes. Swipe works too.<br>
+Throttle on right controls speed. Run lasts ~30 seconds.
+</div>
+<button class="beezer-btn primary" onclick="closeModal();startBonusRun()">Start Run!</button>
+<button class="beezer-btn dismiss" onclick="closeModal()">Not now</button>
+</div>`);
+}
+
+function startBonusRun(){
+if(!G || G.bonusRunUsedThisWeek) return;
+const bestMower = G.mowers.filter(m=>m.owned && (m.health==null||m.health>0)).sort((a,b)=>b.efficiency-a.efficiency)[0];
+if(!bestMower) return;
+
+const canvas = $('mow-canvas');
+const screen = $('mowing-screen');
+showScreen('mowing-screen');
+$('bottom-nav').style.display='none';
+$('throttle-area').style.display='block';
+
+const ability = RUNNER_MOWER_ABILITIES[bestMower.id] || RUNNER_MOWER_ABILITIES.toro42;
+const mowerDef = MOWERS.find(m=>m.id===bestMower.id);
+mowAvoidance = mowerDef ? mowerDef.avoidance : 0;
+
+const w = screen.clientWidth || window.innerWidth;
+const h = screen.clientHeight || window.innerHeight;
+canvas.width = w * 2;
+canvas.height = h * 2;
+canvas.style.width = w + 'px';
+canvas.style.height = h + 'px';
+canvas.style.top = '0';
+
+const LANES = 5;
+const laneWidth = w / LANES;
+const runDuration = 35; // seconds
+const yardLength = 5000; // virtual scroll length
+
+// Mower stats
+const healthBoost = 1 + getMowerUpgradeEffect(bestMower, 'health');
+const rawHealth = bestMower.health != null ? bestMower.health : 100;
+const mowerHealth = Math.min(100 * healthBoost, rawHealth * healthBoost);
+const healthPenalty = mowerHealth < 50 ? 0.5 + (mowerHealth / 100) : 1;
+const baseScrollSpeed = (2.5 + (bestMower.speed - 7) * 0.3) * ability.speed;
+
+// Generate obstacles and bonuses
+const items = [];
+const obstacleTypes = ['rock','gnome','sprinkler','tree'];
+const bonusTypes = ['coin','fuel','star','wrench'];
+const segmentHeight = h * 0.7;
+const numSegments = Math.ceil(yardLength / segmentHeight);
+for(let seg=0;seg<numSegments;seg++){
+const segTop = seg * segmentHeight + h * 0.4;
+const obsCount = rng(2, 4);
+for(let i=0;i<obsCount;i++){
+items.push({lane:rng(0,LANES-1), yPos:segTop+rng(20,Math.floor(segmentHeight)-20), type:'obstacle', subtype:pick(obstacleTypes), collected:false, hit:false});
+}
+const bonusCount = rng(2, 4);
+for(let i=0;i<bonusCount;i++){
+items.push({lane:rng(0,LANES-1), yPos:segTop+rng(20,Math.floor(segmentHeight)-20), type:'bonus', subtype:pick(bonusTypes), collected:false, hit:false});
+}
+}
+// Remove overlaps
+items.sort((a,b)=>a.yPos-b.yPos);
+const filtered = [];
+for(let i=0;i<items.length;i++){
+const it=items[i];
+let tooClose=false;
+for(let j=filtered.length-1;j>=0;j--){
+if(filtered[j].lane===it.lane && Math.abs(filtered[j].yPos-it.yPos)<50){tooClose=true;break;}
+if(it.yPos-filtered[j].yPos>100) break;
+}
+if(!tooClose) filtered.push(it);
+}
+
+bonusRunState = {
+canvas, w, h,
+LANES, laneWidth,
+yardLength, runDuration,
+currentLane: 2, targetLane: 2,
+laneX: w / 2,
+scrollY: 0,
+baseScrollSpeed, scrollSpeed: baseScrollSpeed,
+items: filtered,
+mower: bestMower,
+ability,
+mowerHealth, healthPenalty,
+damageThisRun: 0,
+hitCount: 0,
+obstaclesDodged: 0,
+totalObstacles: filtered.filter(it=>it.type==='obstacle').length,
+bonusesCollected: 0,
+cashBonus: 0, fuelCans: 0, xpBonus: 0, wrenches: 0,
+timer: 0, startTime: Date.now(),
+done: false, brokeDown: false, breakdownEnd: 0,
+lastCollision: 0,
+particles: [],
+slowdownUntil: 0, flashUntil: 0,
+distance: 0,
+// Ability state
+steadyUsesLeft: ability.special==='steady' ? (ability.uses||3) : 0,
+autoDodgesLeft: ability.special==='boss_mode' ? (ability.autoDodges||1) : 0,
+gameMode: 'runner'
+};
+
+// Set mow-mode HUD
+throttleValue = 0.5;
+$('throttle-fill').style.height='50%';
+$('throttle-handle').style.bottom='calc(50% - 7px)';
+$('mow-complete').style.display='none';
+$('breakdown-overlay').style.display='none';
+$('mow-yard-name').textContent = 'Bonus Run';
+$('mow-progress').textContent = '0m';
+
+// Hide normal mow elements, show runner elements
+const thumbArea = $('thumb-toggle-area');
+const joystickArea = $('joystick-touch-area');
+if(thumbArea) thumbArea.style.display='none';
+if(joystickArea) joystickArea.style.display='none';
+
+if(bonusRunAnimFrame) cancelAnimationFrame(bonusRunAnimFrame);
+bonusRunLoop();
+}
+
+function bonusRunChangeLane(dir){
+if(!bonusRunState || bonusRunState.done) return;
+const bs = bonusRunState;
+const newLane = clamp(bs.currentLane + dir, 0, bs.LANES - 1);
+if(newLane !== bs.currentLane){
+// Boss mode auto-dodge
+if(bs.ability.special==='boss_mode' && bs.autoDodgesLeft > 0){
+const mowerWorldY = bs.scrollY + bs.h * 0.7;
+let hasObs = false;
+bs.items.forEach(it=>{
+if(it.type==='obstacle' && !it.hit && it.lane===newLane && Math.abs(it.yPos-mowerWorldY)<30) hasObs=true;
+});
+if(hasObs){
+bs.autoDodgesLeft--;
+// Skip into the lane, mark obstacle as auto-dodged
+bs.items.forEach(it=>{
+if(it.type==='obstacle' && !it.hit && it.lane===newLane && Math.abs(it.yPos-mowerWorldY)<30){
+it.hit=true; bs.obstaclesDodged++;
+for(let i=0;i<4;i++) bs.particles.push({x:newLane*bs.laneWidth+bs.laneWidth/2+rng(-10,10),y:bs.h*0.7+rng(-5,5),vx:(Math.random()-0.5)*2,vy:-Math.random()*2,life:20,size:rng(2,4),color:'#ffd700'});
+}
+});
+}
+}
+bs.currentLane = newLane;
+bs.targetLane = newLane;
+}
+}
+
+function bonusRunLoop(){
+if(!bonusRunState || bonusRunState.done) return;
+const bs = bonusRunState;
+const ctx = bs.canvas.getContext('2d');
+ctx.save();
+ctx.scale(2,2);
+
+bs.timer = (Date.now() - bs.startTime) / 1000;
+$('mow-timer').textContent = formatTime(bs.timer);
+
+// Check time-based end
+if(bs.timer >= bs.runDuration && !bs.done){
+completeBonusRun();
+ctx.restore();
+return;
+}
+
+// Breakdown
+if(bs.brokeDown){
+if(Date.now() < bs.breakdownEnd){
+$('breakdown-timer').textContent = Math.ceil((bs.breakdownEnd-Date.now())/1000);
+drawBonusRunScene(ctx,bs);
+ctx.restore();
+bonusRunAnimFrame = requestAnimationFrame(bonusRunLoop);
+return;
+} else {
+bs.brokeDown=false;
+$('breakdown-overlay').style.display='none';
+}
+}
+
+// Random breakdown
+if(bs.mowerHealth > 0 && bs.mowerHealth < 25 && Math.random() < 0.0005){
+bs.brokeDown=true;
+bs.breakdownEnd=Date.now()+8000;
+$('breakdown-overlay').style.display='flex';
+drawBonusRunScene(ctx,bs);
+ctx.restore();
+bonusRunAnimFrame = requestAnimationFrame(bonusRunLoop);
+return;
+}
+
+const now = Date.now();
+const timeRamp = 1 + bs.timer * 0.008; // speed increases faster in bonus run
+const throttleMult = 0.4 + throttleValue * 1.2;
+const slowdown = now < bs.slowdownUntil ? (bs.ability.special==='smooth_ride' ? 0.8 : 0.3) : 1;
+const boost = keysDown['Shift'] ? 1.4 : 1;
+bs.scrollSpeed = bs.baseScrollSpeed * throttleMult * timeRamp * slowdown * bs.healthPenalty * boost;
+bs.scrollY += bs.scrollSpeed;
+bs.distance += bs.scrollSpeed;
+
+// Smooth lane position
+const targetX = bs.currentLane * bs.laneWidth + bs.laneWidth / 2;
+bs.laneX += (targetX - bs.laneX) * 0.2;
+
+// Keyboard
+if(keysDown['ArrowLeft']||keysDown['a']||keysDown['A']){
+if(!keysDown._brLeftHandled){bonusRunChangeLane(-1);keysDown._brLeftHandled=true;}
+} else { keysDown._brLeftHandled=false; }
+if(keysDown['ArrowRight']||keysDown['d']||keysDown['D']){
+if(!keysDown._brRightHandled){bonusRunChangeLane(1);keysDown._brRightHandled=true;}
+} else { keysDown._brRightHandled=false; }
+
+// Steady ability — auto slow-mo near obstacles
+if(bs.ability.special==='steady' && bs.steadyUsesLeft > 0){
+const mowerWorldY = bs.scrollY + bs.h * 0.7;
+let nearObs = false;
+bs.items.forEach(it=>{
+if(it.type==='obstacle' && !it.hit && it.lane===bs.currentLane && it.yPos > mowerWorldY && it.yPos - mowerWorldY < bs.h * 0.3) nearObs=true;
+});
+if(nearObs){
+bs.scrollSpeed *= 0.4;
+bs.steadyUsesLeft--;
+for(let i=0;i<2;i++) bs.particles.push({x:bs.laneX+rng(-15,15),y:bs.h*0.7+rng(-5,5),vx:0,vy:-0.5,life:15,size:3,color:'rgba(100,180,255,0.7)'});
+}
+}
+
+// Smart Collect — auto-collect bonuses in adjacent lanes
+if(bs.ability.special==='smart_collect'){
+const mowerWorldY = bs.scrollY + bs.h * 0.7;
+bs.items.forEach(it=>{
+if(it.type==='bonus' && !it.collected && Math.abs(it.lane - bs.currentLane)===1 && Math.abs(it.yPos - mowerWorldY)<25){
+it.collected=true;
+collectBonusRunItem(bs, it);
+}
+});
+}
+
+// Boss Mode — magnetic coin pull (2 lane radius)
+if(bs.ability.special==='boss_mode'){
+const mowerWorldY = bs.scrollY + bs.h * 0.7;
+bs.items.forEach(it=>{
+if(it.type==='bonus' && it.subtype==='coin' && !it.collected && Math.abs(it.lane - bs.currentLane)<=2 && Math.abs(it.yPos - mowerWorldY)<50){
+it.collected=true;
+collectBonusRunItem(bs, it);
+}
+});
+}
+
+// Collision detection
+const mowerWorldY = bs.scrollY + bs.h * 0.7;
+const mowerScreenY = bs.h * 0.7;
+const hitRadius = bs.laneWidth * 0.35 * (bs.ability.hitbox||1);
+
+bs.items.forEach(it=>{
+if(it.collected || it.hit) return;
+const itemScreenY = it.yPos - bs.scrollY;
+if(Math.abs(itemScreenY - mowerScreenY) > hitRadius) return;
+if(it.lane !== bs.currentLane) return;
+
+if(it.type === 'obstacle'){
+// Avoidance check
+if(mowAvoidance > 0 && Math.random() < mowAvoidance * 0.5){
+bs.obstaclesDodged++;
+it.hit=true;
+for(let i=0;i<3;i++) bs.particles.push({x:bs.laneX+rng(-10,10),y:mowerScreenY+rng(-5,5),vx:(Math.random()-0.5)*2,vy:-Math.random()*2,life:15,size:rng(2,3),color:'#6db85a'});
+return;
+}
+it.hit=true;
+bs.hitCount++;
+const tireReduction = 1 - getMowerUpgradeEffect(bs.mower, 'damage');
+const skillReduction = 1 - getSkillEffect('equipmentExpert');
+const dmg = Math.max(0.5, Math.round(10 * (2 + throttleValue * 3) * tireReduction * skillReduction) / 10);
+bs.mowerHealth = Math.max(0, bs.mowerHealth - dmg);
+bs.damageThisRun += dmg;
+if(bs.ability.special !== 'smooth_ride') bs.slowdownUntil = now + 400;
+bs.flashUntil = now + 200;
+for(let i=0;i<5;i++) bs.particles.push({x:bs.laneX+rng(-15,15),y:mowerScreenY+rng(-10,10),vx:(Math.random()-0.5)*4,vy:-Math.random()*3,life:20,size:rng(2,5),color:'#f44'});
+updateBonusRunHUD();
+if(bs.mowerHealth <= 0){
+bonusRunMowerDestroyed();
+ctx.restore();
+return;
+}
+} else if(it.type === 'bonus'){
+it.collected=true;
+collectBonusRunItem(bs, it);
+}
+});
+
+// Passed obstacles = dodged
+bs.items.forEach(it=>{
+if(it.type==='obstacle' && !it.hit && it.yPos < bs.scrollY - 50){
+it.hit=true;
+bs.obstaclesDodged++;
+}
+});
+
+updateBonusRunHUD();
+
+// Update particles
+bs.particles = bs.particles.filter(p=>{
+p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.life--;
+return p.life>0;
+});
+
+drawBonusRunScene(ctx,bs);
+ctx.restore();
+
+bonusRunAnimFrame = requestAnimationFrame(bonusRunLoop);
+}
+
+function collectBonusRunItem(bs, it){
+bs.bonusesCollected++;
+const screenY = bs.h * 0.7;
+if(it.subtype==='coin'){
+const val = rng(5,20);
+bs.cashBonus += val;
+for(let i=0;i<4;i++) bs.particles.push({x:bs.laneX+rng(-8,8),y:screenY+rng(-5,5),vx:(Math.random()-0.5)*2,vy:-Math.random()*3,life:25,size:rng(2,4),color:'#ffd700'});
+} else if(it.subtype==='fuel'){
+bs.fuelCans++;
+for(let i=0;i<3;i++) bs.particles.push({x:bs.laneX+rng(-8,8),y:screenY+rng(-5,5),vx:(Math.random()-0.5)*2,vy:-Math.random()*3,life:25,size:rng(2,4),color:'#44aaff'});
+} else if(it.subtype==='star'){
+bs.xpBonus += rng(5,15);
+for(let i=0;i<4;i++) bs.particles.push({x:bs.laneX+rng(-8,8),y:screenY+rng(-5,5),vx:(Math.random()-0.5)*2,vy:-Math.random()*3,life:25,size:rng(2,4),color:'#ffaa00'});
+} else if(it.subtype==='wrench'){
+bs.wrenches++;
+for(let i=0;i<3;i++) bs.particles.push({x:bs.laneX+rng(-8,8),y:screenY+rng(-5,5),vx:(Math.random()-0.5)*2,vy:-Math.random()*3,life:25,size:rng(2,4),color:'#aaa'});
+}
+}
+
+function updateBonusRunHUD(){
+if(!bonusRunState) return;
+const bs = bonusRunState;
+const h = bs.mowerHealth;
+$('hud-health-fill').style.width = Math.max(0,h)+'%';
+$('hud-health-fill').style.background = h > 50 ? 'var(--success)' : h > 25 ? 'var(--warning)' : 'var(--danger)';
+$('hud-health-text').textContent = Math.round(Math.max(0,h))+'%';
+$('hud-speed').innerHTML = `&#9881; ${Math.round(throttleValue*100)}%`;
+const timeLeft = Math.max(0, bs.runDuration - bs.timer);
+$('mow-progress').textContent = Math.round(bs.distance)+'m | '+Math.ceil(timeLeft)+'s left';
+}
+
+function drawBonusRunScene(ctx, bs){
+const w=bs.w, h=bs.h;
+const mowerScreenY = h * 0.7;
+const laneW = bs.laneWidth;
+
+// Sky
+const skyH = h * 0.1;
+const skyGrad = ctx.createLinearGradient(0,0,0,skyH);
+skyGrad.addColorStop(0,'#87CEEB');
+skyGrad.addColorStop(1,'#a8d8a0');
+ctx.fillStyle=skyGrad;
+ctx.fillRect(0,0,w,skyH);
+
+// Grass background
+for(let lane=0;lane<bs.LANES;lane++){
+const lx = lane * laneW;
+const scrollOff = bs.scrollY % 32;
+for(let y = skyH - scrollOff; y < h; y += 16){
+const rowIdx = Math.floor((y + bs.scrollY) / 16);
+const shade = (rowIdx + lane) % 3;
+ctx.fillStyle = shade===0 ? '#3a8a2a' : shade===1 ? '#45952f' : '#4da035';
+ctx.fillRect(lx, y, laneW, 16);
+}
+// Lane dividers
+if(lane > 0){
+ctx.strokeStyle='rgba(255,255,255,0.08)';
+ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(lx,skyH);ctx.lineTo(lx,h);ctx.stroke();
+}
+}
+
+// Fence borders
+ctx.fillStyle='#8B6914';
+ctx.fillRect(0,skyH,4,h-skyH);
+ctx.fillRect(w-4,skyH,4,h-skyH);
+for(let fy=skyH;fy<h;fy+=40){
+const postY = fy - (bs.scrollY%40);
+if(postY > skyH && postY < h){
+ctx.fillStyle='#6B4E0A';
+ctx.fillRect(0,postY,6,8);
+ctx.fillRect(w-6,postY,6,8);
+}
+}
+
+// Items
+bs.items.forEach(it=>{
+const screenY = it.yPos - bs.scrollY;
+if(screenY < -50 || screenY > h+50) return;
+if(it.collected || (it.type==='obstacle' && it.hit)) return;
+const cx = it.lane * laneW + laneW / 2;
+const size = laneW * 0.35;
+if(it.type==='obstacle') drawBonusRunObstacle(ctx, cx, screenY, size, it.subtype);
+else drawBonusRunBonus(ctx, cx, screenY, size*0.7, it.subtype);
+});
+
+// Mower
+const now=Date.now();
+const isFlashing = now < bs.flashUntil;
+ctx.save();
+ctx.translate(bs.laneX, mowerScreenY);
+ctx.fillStyle='rgba(0,0,0,0.15)';
+ctx.beginPath();ctx.ellipse(0,8,laneW*0.3,8,0,0,Math.PI*2);ctx.fill();
+const mwHalf = laneW * 0.22;
+const mwLen = laneW * 0.4;
+if(isFlashing && Math.floor(now/60)%2===0) ctx.globalAlpha=0.4;
+// Deck
+ctx.fillStyle='#555';
+ctx.beginPath();ctx.roundRect(-mwHalf*1.3,-mwLen*0.6,mwHalf*2.6,mwLen*0.5,[3]);ctx.fill();
+// Body
+const mowerId = bs.mower ? bs.mower.id : '';
+const baseColor = mowerId==='grasshopper'?'#c4a55a':'#cc3333';
+const dmgColor = mowerId==='grasshopper'?'#a8944a':'#cc8833';
+const critColor = mowerId==='grasshopper'?'#7a6a3a':'#884444';
+const bodyColor = bs.mowerHealth>50?baseColor:bs.mowerHealth>25?dmgColor:critColor;
+ctx.fillStyle=bodyColor;
+ctx.beginPath();ctx.roundRect(-mwHalf,-mwLen*0.2,mwHalf*2,mwLen*1.1,[4]);ctx.fill();
+// Engine
+ctx.fillStyle='#222';
+ctx.fillRect(-mwHalf*0.5,mwLen*0.3,mwHalf*1,mwLen*0.4);
+// Seat
+ctx.fillStyle='#1a1a1a';
+ctx.beginPath();ctx.roundRect(-mwHalf*0.4,mwLen*0.1,mwHalf*0.8,mwLen*0.35,[3]);ctx.fill();
+// Wheels
+ctx.fillStyle='#333';
+ctx.beginPath();ctx.arc(-mwHalf-2,-mwLen*0.2,4,0,Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(mwHalf+2,-mwLen*0.2,4,0,Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(-mwHalf-1,mwLen*0.7,5,0,Math.PI*2);ctx.fill();
+ctx.beginPath();ctx.arc(mwHalf+1,mwLen*0.7,5,0,Math.PI*2);ctx.fill();
+// Boss mode glow
+if(bs.ability.special==='boss_mode'){
+ctx.globalAlpha=0.15;
+ctx.fillStyle='#ffd700';
+ctx.beginPath();ctx.arc(0,0,laneW*0.6,0,Math.PI*2);ctx.fill();
+ctx.globalAlpha=1;
+}
+// Smoke if damaged
+if(bs.mowerHealth < 40){
+ctx.globalAlpha=0.3;
+ctx.fillStyle='#888';
+const st=now/200;
+ctx.beginPath();ctx.arc(Math.sin(st)*5,mwLen*0.5+Math.cos(st)*3,5+Math.sin(st*1.3)*2,0,Math.PI*2);ctx.fill();
+}
+ctx.globalAlpha=1;
+ctx.restore();
+
+// Particles
+bs.particles.forEach(p=>{
+ctx.globalAlpha=p.life/30;
+ctx.fillStyle=p.color||'#6db85a';
+ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+});
+ctx.globalAlpha=1;
+
+// Grass clippings
+if(Math.random()<0.4){
+bs.particles.push({x:bs.laneX+rng(-15,15),y:mowerScreenY+laneW*0.45,vx:(Math.random()-0.5)*1.5,vy:Math.random()*1+0.5,life:15+rng(0,8),size:rng(1,3),color:'#6db85a'});
+}
+
+// Score HUD overlay
+ctx.fillStyle='rgba(0,0,0,0.5)';
+ctx.beginPath();ctx.roundRect(w-90,skyH+8,82,50,[8]);ctx.fill();
+ctx.fillStyle='#ffd700';
+ctx.font='bold 11px Inter';ctx.textAlign='right';
+ctx.fillText('$'+bs.cashBonus, w-14, skyH+24);
+ctx.fillStyle='#ffaa00';
+ctx.fillText('+'+bs.xpBonus+' XP', w-14, skyH+38);
+ctx.fillStyle='#aaa';
+ctx.fillText(bs.wrenches > 0 ? bs.wrenches+' wrenches':'', w-14, skyH+52);
+}
+
+function drawBonusRunObstacle(ctx, cx, cy, size, subtype){
+ctx.save();
+ctx.translate(cx, cy);
+if(subtype==='rock'){
+ctx.fillStyle='#888';
+ctx.beginPath();ctx.ellipse(0,0,size,size*0.7,0,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#999';
+ctx.beginPath();ctx.ellipse(-size*0.15,-size*0.2,size*0.5,size*0.35,0,0,Math.PI*2);ctx.fill();
+} else if(subtype==='gnome'){
+ctx.fillStyle='#cc3333';
+ctx.beginPath();ctx.roundRect(-size*0.25,-size*0.2,size*0.5,size*0.6,[3]);ctx.fill();
+ctx.fillStyle='#f5d0a0';
+ctx.beginPath();ctx.arc(0,-size*0.35,size*0.2,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#cc3333';
+ctx.beginPath();ctx.moveTo(-size*0.2,-size*0.4);ctx.lineTo(0,-size*0.75);ctx.lineTo(size*0.2,-size*0.4);ctx.closePath();ctx.fill();
+ctx.fillStyle='#fff';
+ctx.beginPath();ctx.ellipse(0,-size*0.15,size*0.15,size*0.12,0,0,Math.PI*2);ctx.fill();
+} else if(subtype==='sprinkler'){
+ctx.fillStyle='#666';
+ctx.fillRect(-3,-size*0.3,6,size*0.6);
+ctx.fillStyle='#888';
+ctx.beginPath();ctx.arc(0,-size*0.35,5,0,Math.PI*2);ctx.fill();
+ctx.globalAlpha=0.3;
+ctx.strokeStyle='#44aaff';ctx.lineWidth=1;
+const t=Date.now()/300;
+for(let i=0;i<4;i++){
+const angle=t+i*0.8;
+ctx.beginPath();ctx.moveTo(0,-size*0.35);
+ctx.quadraticCurveTo(Math.cos(angle)*size*0.5,-size*0.5+Math.sin(angle)*5,Math.cos(angle)*size*0.7,Math.sin(angle)*size*0.3);
+ctx.stroke();
+}
+ctx.globalAlpha=1;
+} else if(subtype==='tree'){
+ctx.fillStyle='rgba(0,0,0,0.1)';
+ctx.beginPath();ctx.ellipse(2,size*0.5,size*0.6,size*0.2,0,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#5a3a1a';
+ctx.fillRect(-size*0.12,-size*0.1,size*0.24,size*0.7);
+ctx.fillStyle='#2d6a1a';
+ctx.beginPath();ctx.arc(0,-size*0.3,size*0.55,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#3a8a2a';
+ctx.beginPath();ctx.arc(-size*0.15,-size*0.4,size*0.35,0,Math.PI*2);ctx.fill();
+}
+ctx.restore();
+}
+
+function drawBonusRunBonus(ctx, cx, cy, size, subtype){
+ctx.save();
+ctx.translate(cx, cy);
+const bob = Math.sin(Date.now()/300 + cx) * 3;
+ctx.translate(0, bob);
+if(subtype==='coin'){
+ctx.fillStyle='#ffd700';
+ctx.beginPath();ctx.arc(0,0,size,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#ffea00';
+ctx.beginPath();ctx.arc(-size*0.2,-size*0.2,size*0.4,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='#b8960a';ctx.lineWidth=1.5;
+ctx.beginPath();ctx.arc(0,0,size,0,Math.PI*2);ctx.stroke();
+ctx.fillStyle='#8a6e00';ctx.font=`bold ${Math.round(size)}px Inter`;ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText('$',0,1);
+} else if(subtype==='fuel'){
+ctx.fillStyle='#2266cc';
+ctx.beginPath();ctx.roundRect(-size*0.6,-size*0.8,size*1.2,size*1.6,[3]);ctx.fill();
+ctx.fillStyle='#3388ee';
+ctx.beginPath();ctx.roundRect(-size*0.45,-size*0.65,size*0.9,size*0.6,[2]);ctx.fill();
+ctx.fillStyle='#444';
+ctx.fillRect(-size*0.15,-size*0.95,size*0.3,size*0.2);
+ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(size*0.5)}px Inter`;ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText('F',0,size*0.15);
+} else if(subtype==='star'){
+ctx.fillStyle='#ffaa00';
+drawBonusRunStar(ctx,0,0,size*0.5,size,5);
+ctx.fillStyle='#ffcc44';
+drawBonusRunStar(ctx,0,0,size*0.3,size*0.6,5);
+} else if(subtype==='wrench'){
+ctx.fillStyle='#999';
+ctx.beginPath();ctx.roundRect(-size*0.15,-size*0.8,size*0.3,size*1.6,[2]);ctx.fill();
+ctx.fillStyle='#bbb';
+ctx.beginPath();ctx.arc(0,-size*0.7,size*0.4,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#999';
+ctx.beginPath();ctx.arc(0,-size*0.7,size*0.2,0,Math.PI*2);ctx.fill();
+}
+ctx.restore();
+}
+
+function drawBonusRunStar(ctx,cx,cy,inner,outer,points){
+ctx.beginPath();
+for(let i=0;i<points*2;i++){
+const r=i%2===0?outer:inner;
+const angle=(i*Math.PI/points)-Math.PI/2;
+if(i===0)ctx.moveTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
+else ctx.lineTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
+}
+ctx.closePath();ctx.fill();
+}
+
+function bonusRunMowerDestroyed(){
+const bs=bonusRunState;
+bs.done=true;
+// Still give partial rewards
+const cashReward = Math.round(bs.cashBonus * 0.5);
+const xpReward = Math.max(5, Math.round(bs.xpBonus * 0.5));
+if(cashReward > 0) G.cash += cashReward;
+addXP(xpReward, 'Bonus Run (partial)');
+G.bonusRunUsedThisWeek = true;
+G.bonusRunsCompleted = (G.bonusRunsCompleted||0) + 1;
+// Save mower health
+if(bs.mower){
+const gMower = G.mowers.find(m=>m.id===bs.mower.id && m.owned);
+if(gMower) gMower.health = 0;
+}
+$('mow-complete').style.display='flex';
+$('mow-complete').innerHTML=`
+<h2 style="color:var(--danger)">Mower Destroyed!</h2>
+<div style="font-size:3rem;margin:12px 0">&#128165;</div>
+<div class="mow-stats">Your run ended early at ${Math.round(bs.distance)}m</div>
+<div class="mow-stats" style="color:#ffd700">Partial Cash: +${fmt(cashReward)}</div>
+<div class="mow-stats" style="color:#ffaa00">Partial XP: +${xpReward}</div>
+<button onclick="exitBonusRun()">Continue</button>`;
+saveGame();
+}
+
+function completeBonusRun(){
+const bs=bonusRunState;
+bs.done=true;
+
+// Score calculation
+const distScore = Math.round(bs.distance / 10);
+const dodgeRatio = bs.totalObstacles > 0 ? bs.obstaclesDodged / bs.totalObstacles : 1;
+const totalScore = distScore + bs.cashBonus + bs.bonusesCollected * 5 + Math.round(dodgeRatio * 50);
+
+// Cash reward based on score
+const cashFromScore = Math.round(totalScore * 0.5 + 10);
+const totalCash = cashFromScore + bs.cashBonus;
+G.cash += totalCash;
+
+// XP reward: 10-50 based on score
+const xpFromScore = clamp(Math.round(totalScore * 0.15), 10, 50);
+const totalXP = xpFromScore + bs.xpBonus;
+addXP(totalXP, 'Bonus Run');
+
+// Fuel cans: each reduces next week's gas by 10%
+if(bs.fuelCans > 0){
+G.bonusRunGasDiscount = Math.min(0.5, bs.fuelCans * 0.10);
+}
+
+// Wrenches: each repairs mower 5%
+if(bs.wrenches > 0 && bs.mower){
+const gMower = G.mowers.find(m=>m.id===bs.mower.id && m.owned);
+if(gMower){
+const repairAmt = bs.wrenches * 5;
+gMower.health = Math.min(100, (gMower.health||100) + repairAmt);
+}
+} else {
+// Save mower health back
+if(bs.mower){
+const gMower = G.mowers.find(m=>m.id===bs.mower.id && m.owned);
+if(gMower){
+const hBoost = 1 + getMowerUpgradeEffect(gMower, 'health');
+gMower.health = Math.min(100, bs.mowerHealth / hBoost);
+}
+}
+}
+
+// Mark used
+G.bonusRunUsedThisWeek = true;
+G.bonusRunsCompleted = (G.bonusRunsCompleted||0) + 1;
+
+// Achievements
+if(bs.hitCount === 0) unlockAchievement('perfect_run');
+if((G.bonusRunsCompleted||0) >= 10) unlockAchievement('road_runner');
+checkAchievements();
+
+// Results screen
+const dodgePct = bs.totalObstacles > 0 ? Math.round(dodgeRatio * 100) : 100;
+let bonusLines='';
+if(bs.fuelCans > 0) bonusLines+=`<div class="mow-stats" style="color:#44aaff">&#9981; Fuel Cans: ${bs.fuelCans} (-${Math.round(G.bonusRunGasDiscount*100)}% gas next week)</div>`;
+if(bs.wrenches > 0) bonusLines+=`<div class="mow-stats" style="color:#aaa">&#128295; Wrenches: ${bs.wrenches} (+${bs.wrenches*5}% mower repair)</div>`;
+const healthWarning = bs.mowerHealth < 25 ? '<div class="mow-stats" style="color:var(--danger)">Mower critically damaged!</div>' :
+bs.mowerHealth < 50 ? '<div class="mow-stats" style="color:var(--warning)">Mower needs repair</div>' : '';
+
+$('mow-complete').style.display='flex';
+$('mow-complete').innerHTML=`
+<h2>Bonus Run Complete!</h2>
+<div style="font-size:2rem;margin:8px 0">&#127939;&#128176;</div>
+<div class="mow-stats" style="font-size:1.1rem;font-weight:700">Score: ${totalScore}</div>
+<div class="mow-stats">Distance: ${Math.round(bs.distance)}m</div>
+<div class="mow-stats">Obstacles Dodged: ${bs.obstaclesDodged}/${bs.totalObstacles} (${dodgePct}%)</div>
+<div class="mow-stats">Items Collected: ${bs.bonusesCollected}</div>
+<div class="mow-stats">Time: ${formatTime(bs.timer)}</div>
+<div style="margin:8px 0;padding:10px;background:rgba(255,255,255,.1);border-radius:8px">
+<div class="mow-stats" style="color:#ffd700;font-weight:700">&#128176; Cash: +${fmt(totalCash)}</div>
+<div class="mow-stats" style="color:#ffaa00;font-weight:700">&#11088; XP: +${totalXP}</div>
+${bonusLines}
+</div>
+<div class="mow-stats">Mower Health: ${Math.round(bs.mowerHealth)}%${bs.damageThisRun>0?' (-'+Math.round(bs.damageThisRun)+'%)':''}</div>
+${healthWarning}
+<button onclick="exitBonusRun()">Continue</button>`;
+saveGame();
+}
+
+function exitBonusRun(){
+bonusRunState = null;
+if(bonusRunAnimFrame) cancelAnimationFrame(bonusRunAnimFrame);
+$('bottom-nav').style.display='flex';
+// Restore normal mow elements
+const thumbArea = $('thumb-toggle-area');
+const joystickArea = $('joystick-touch-area');
+if(thumbArea) thumbArea.style.display='';
+if(joystickArea) joystickArea.style.display='';
+showScreen('dashboard');
+}
+
+// ===== BONUS RUN TOUCH CONTROLS =====
+// Reuse existing touch areas for bonus run lane changes
+document.addEventListener('touchstart', function(e){
+if(!bonusRunState || bonusRunState.done) return;
+const t = e.touches[0];
+const w = window.innerWidth;
+if(t.clientX < w * 0.4) bonusRunChangeLane(-1);
+else if(t.clientX > w * 0.6) bonusRunChangeLane(1);
+}, {passive:true});
+
+// Swipe for bonus run
+(function setupBonusRunSwipe(){
+let swipeStartX = null;
+document.addEventListener('touchstart', e=>{
+if(!bonusRunState || bonusRunState.done) return;
+if(e.touches.length===1) swipeStartX=e.touches[0].clientX;
+},{passive:true});
+document.addEventListener('touchmove', e=>{
+if(!bonusRunState || bonusRunState.done || swipeStartX===null) return;
+const dx = e.touches[0].clientX - swipeStartX;
+if(Math.abs(dx)>30){
+bonusRunChangeLane(dx>0?1:-1);
+swipeStartX=null;
+}
+},{passive:true});
+document.addEventListener('touchend', ()=>{if(bonusRunState) swipeStartX=null;},{passive:true});
+})();
+
+// Apply bonus run gas discount to gas costs
+const _origCalcContractGasCost = calcContractGasCost;
+calcContractGasCost = function(c){
+let cost = _origCalcContractGasCost(c);
+if(G && G.bonusRunGasDiscount > 0) cost *= (1 - G.bonusRunGasDiscount);
+return Math.round(cost * 100) / 100;
+};
 
 </script>
 </body>
