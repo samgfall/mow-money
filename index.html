@@ -391,6 +391,32 @@ display:flex;align-items:center;gap:8px;max-width:90vw}
 /* ROUTE PLANNER */
 .route-planner-info{margin:0 16px 8px;padding:10px 14px;background:#d1ecf1;border-radius:var(--radius);font-size:.8rem;color:#0c5460;display:flex;align-items:center;gap:8px}
 
+/* ADVANCE WEEK PULSE */
+@keyframes advancePulse{0%,100%{box-shadow:0 4px 16px rgba(45,90,39,.3)}50%{box-shadow:0 4px 24px rgba(45,90,39,.6),0 0 0 6px rgba(74,140,63,.2)}}
+.advance-week-btn.pulse{animation:advancePulse 1.5s ease-in-out infinite}
+.all-done-banner{margin:0 16px 8px;padding:12px 16px;border-radius:var(--radius);font-size:.85rem;font-weight:600;
+background:linear-gradient(135deg,#d4edda,#c3e6cb);color:#155724;border:1px solid #c3e6cb;display:flex;align-items:center;gap:8px;animation:fadeIn .3s ease}
+
+/* EMPLOYEE PERK BADGE */
+.emp-perk{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:600;
+background:linear-gradient(135deg,#e8f0fe,#d1e3ff);color:#1a56db;border:1px solid #b8d4fe;margin-top:4px}
+.emp-personality{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;font-size:.65rem;font-weight:600;margin-left:4px}
+.emp-personality.cheerful{background:#d4edda;color:#155724}
+.emp-personality.grumpy{background:#f8d7da;color:#721c24}
+.emp-personality.sarcastic{background:#fff3cd;color:#856404}
+.emp-personality.eager{background:#d1ecf1;color:#0c5460}
+.emp-personality.chill{background:#e8e8e8;color:#555}
+
+/* EMPLOYEE CAP BADGE */
+.emp-cap{font-size:.72rem;color:var(--text-light);font-weight:500}
+.emp-cap.full{color:var(--danger);font-weight:600}
+
+/* CONTRACT MOWED-BY */
+.mowed-by{font-size:.72rem;color:var(--text-light);font-style:italic;margin-top:4px}
+
+/* COMPANY LABEL ON TOP BAR */
+.top-company{font-size:.7rem;opacity:.7;font-weight:400}
+
 /* RESPONSIVE */
 @media(min-width:600px){
 .stats-grid{grid-template-columns:repeat(4,1fr)}
@@ -635,6 +661,64 @@ const ACHIEVEMENTS = [
 {id:'competitor_crusher',name:'Competitor Crusher',icon:'\uD83D\uDCAA',desc:'Reach higher reputation than all competitors',hint:'Beat the competition',xp:75,check:g=>(g.competitors||[]).every(c=>g.reputation>c.rep)}
 ];
 
+// Employee lawn caps by level
+const EMP_LAWN_CAPS = {Rookie:3, Experienced:5, Expert:7};
+// Employee job time multiplier by level (minutes per job)
+const EMP_JOB_TIME = {Rookie:2, Experienced:1.5, Expert:1.2};
+
+// Unique employee perks pool
+const EMP_PERKS = [
+{id:'duct_tape',name:'Duct Tape Handyman',icon:'\uD83E\uDE79',desc:'Reduces mower damage by 30% on their jobs'},
+{id:'sales_star',name:'Sales Star',icon:'\uD83E\uDD29',desc:'20% chance to bring in a new contract each week'},
+{id:'speed_demon',name:'Speed Demon',icon:'\u26A1',desc:'Completes jobs 30% faster (less time cost)'},
+{id:'green_thumb',name:'Green Thumb',icon:'\uD83C\uDF3F',desc:'+1 star bonus on customer satisfaction'},
+{id:'early_bird',name:'Early Bird',icon:'\uD83D\uDC26',desc:'Can do 2 extra contracts above level cap'},
+{id:'penny_pincher',name:'Penny Pincher',icon:'\uD83D\uDCB2',desc:'Uses 25% less gas on their routes'},
+{id:'smooth_operator',name:'Smooth Operator',icon:'\uD83D\uDE0E',desc:'Customers never drop below 3 satisfaction'},
+{id:'jack_trades',name:'Jack of All Trades',icon:'\uD83D\uDEE0',desc:'Can do seasonal jobs without extra equipment'}
+];
+
+// Employee personality types and dialogue
+const EMP_PERSONALITIES = ['cheerful','grumpy','sarcastic','eager','chill'];
+const EMP_PERSONALITY_ICONS = {cheerful:'\uD83D\uDE04',grumpy:'\uD83D\uDE20',sarcastic:'\uD83D\uDE0F',eager:'\uD83E\uDD29',chill:'\uD83D\uDE0C'};
+const EMP_DIALOGUE = {
+cheerful:[
+'Another beautiful day of mowing! Love this job!',
+'Nothing beats fresh-cut grass and sunshine!',
+'Best day ever out there, boss!',
+'I could mow all day long — seriously!',
+'Whistling while I work, living the dream!'
+],
+grumpy:[
+'Three yards in this heat? You owe me a cold one.',
+'My back is killing me. You ever mow a hill that steep?',
+'Done. Don\'t ask me about it.',
+'The trimmer line broke twice. TWICE.',
+'I swear that dog was plotting against me.'
+],
+sarcastic:[
+'Oh great, the Anderson estate again. My favorite maze of garden gnomes.',
+'Another day in paradise... if paradise had fire ants.',
+'Sure, I\'ll mow the swamp yard. Why not.',
+'My favorite part? Dodging sprinkler heads like landmines.',
+'I finished early. You\'re welcome, your majesty.'
+],
+eager:[
+'Can I do more next week? I was just getting warmed up!',
+'Already sharpened the blades for tomorrow!',
+'That was awesome! The stripes came out perfect!',
+'I love this job! When do we get more yards?',
+'Finished ahead of schedule — what else you got?'
+],
+chill:[
+'All done, boss. Smooth sailing today.',
+'Easy day. No drama. Just vibes.',
+'Yards are done. Catch you next week.',
+'Everything went fine. Real chill out there.',
+'Knocked it out. Zero stress.'
+]
+};
+
 const MOWER_UPGRADES = [
 {id:'engine_boost',name:'Engine Boost',icon:'\uD83D\uDE80',desc:'+15% speed',price:800},
 {id:'wide_deck',name:'Wide Deck',icon:'\u2194\uFE0F',desc:'+1 mower width',price:600},
@@ -815,8 +899,22 @@ level: l.level,
 wage: l.wage,
 skill: l.skill,
 assignedContracts: [],
-morale: 80 + rng(0,20)
+morale: 80 + rng(0,20),
+perk: pick(EMP_PERKS).id,
+personality: pick(EMP_PERSONALITIES)
 };
+}
+
+function getEmpPerk(e){return EMP_PERKS.find(p=>p.id===e.perk)||null}
+function getEmpCap(e){
+const base = EMP_LAWN_CAPS[e.level]||3;
+const perk = getEmpPerk(e);
+return base + (perk && perk.id==='early_bird' ? 2 : 0);
+}
+function getEmpJobTime(e){
+const base = EMP_JOB_TIME[e.level]||2;
+const perk = getEmpPerk(e);
+return perk && perk.id==='speed_demon' ? Math.round(base*0.7*10)/10 : base;
 }
 
 // ===== SCREEN MANAGEMENT =====
@@ -933,6 +1031,11 @@ if(!G.competitors) G.competitors=[
 {id:'cut_above',name:'A Cut Above',icon:'\u2702\uFE0F',rep:3.0,fleet:2,strength:1.5,steals:0},
 {id:'lawn_stars',name:'Lawn Stars Pro',icon:'\u2B50',rep:2.8,fleet:1,strength:1.2,steals:0}
 ];
+// Employee perks, personality, caps (backwards compat)
+(G.employees||[]).forEach(e=>{
+if(!e.perk) e.perk=pick(EMP_PERKS).id;
+if(!e.personality) e.personality=pick(EMP_PERSONALITIES);
+});
 // Route planner
 if(G.hasRoutePlanner==null) G.hasRoutePlanner=false;
 // Analytics
@@ -969,12 +1072,12 @@ const unmowed = G.contracts.filter(c=>!G.weeklyMowed[c.id]).length;
 const pendingSeasonal = (G.seasonalContracts||[]).filter(sc=>!sc.completed).length;
 if(G.season==='Winter'){
 $('dash-greeting').innerHTML = pendingSeasonal > 0
-? `<span>&#10052;</span> Winter: ${pendingSeasonal} seasonal job${pendingSeasonal>1?'s':''} available`
-: `<span>&#9989;</span> All seasonal jobs done! Ready to advance week.`;
+? `<span>&#10052;</span> Hey ${G.playerName}, ${pendingSeasonal} seasonal job${pendingSeasonal>1?'s':''} available this winter week`
+: `<span>&#9989;</span> Hey ${G.playerName}, all seasonal jobs done! Ready to advance week.`;
 } else {
 $('dash-greeting').innerHTML = unmowed > 0
-? `<span>&#127793;</span> ${G.contracts.length} yards this week, ${unmowed} left to mow${pendingSeasonal>0?' + '+pendingSeasonal+' seasonal':''}`
-: `<span>&#9989;</span> All yards mowed!${pendingSeasonal>0?' '+pendingSeasonal+' seasonal job'+(pendingSeasonal>1?'s':'')+' left.':' Ready to advance week.'}`;
+? `<span>&#127793;</span> Hey ${G.playerName}, ${G.contracts.length} yards this week, ${unmowed} left to mow${pendingSeasonal>0?' + '+pendingSeasonal+' seasonal':''}`
+: `<span>&#9989;</span> Hey ${G.playerName}, all yards mowed!${pendingSeasonal>0?' '+pendingSeasonal+' seasonal job'+(pendingSeasonal>1?'s':'')+' left.':' Ready to advance week.'}`;
 }
 
 // Alerts
@@ -1061,17 +1164,28 @@ $('loan-area').innerHTML = loanHtml;
 
 // Advance button — winter allows advance even with pending seasonal jobs (they're optional)
 const canAdvance = (G.season==='Winter') || unmowed === 0;
-$('advance-btn').className = 'advance-week-btn' + (canAdvance?'':' disabled');
+const allDone = canAdvance && (G.season==='Winter' || G.contracts.length > 0);
+$('advance-btn').className = 'advance-week-btn' + (canAdvance ? (allDone ? ' pulse' : '') : ' disabled');
 if(!canAdvance){
 $('advance-btn').textContent = `Mow ${unmowed} remaining yard${unmowed!==1?'s':''} first`;
 } else {
 $('advance-btn').textContent = 'Advance to Next Week \u25B6';
 }
+// All-done banner + auto-scroll
+const existingBanner = document.querySelector('.all-done-banner');
+if(existingBanner) existingBanner.remove();
+if(allDone && unmowed === 0 && G.season !== 'Winter'){
+const banner = document.createElement('div');
+banner.className = 'all-done-banner';
+banner.innerHTML = '\u2705 All yards mowed! Ready to advance to next week.';
+$('advance-btn').parentNode.insertBefore(banner, $('advance-btn'));
+setTimeout(()=>{$('advance-btn').scrollIntoView({behavior:'smooth',block:'center'})},200);
+}
 }
 
 function updateTopBar(){
 $('top-cash').textContent = fmt(G.cash);
-$('top-week').textContent = `Week ${G.week} - ${G.season}`;
+$('top-week').innerHTML = `Week ${G.week} - ${G.season}<div class="top-company">${G.companyName||G.playerName+"'s Lawn Care"}</div>`;
 const pl = getPlayerLevel ? getPlayerLevel() : {level:1,xpInLevel:0,xpNeeded:100};
 $('top-rep').innerHTML = `${G.reputation.toFixed(1)} &#11088; <span class="xp-mini">Lv${pl.level} <span class="xp-mini-bar"><span class="xp-mini-fill" style="width:${pl.xpInLevel/pl.xpNeeded*100}%"></span></span></span>`;
 ['contracts-cash','shop-cash','emp-cash','map-cash','skills-cash','analytics-cash'].forEach(id=>{
@@ -1197,6 +1311,7 @@ ${assignedEmp?`<span>&#128100; ${assignedEmp.name}</span>`:''}
 ${isWinter ? '<span style="font-size:.78rem;color:var(--text-light)">Winter break</span>' :
 mowed ? '<span class="mowed">&#9989; Mowed</span>' : '<span class="not-mowed">&#10060; Not mowed</span>'}
 </div>
+${mowed && !isWinter ? `<div class="mowed-by">Mowed by ${mowed==='owner'?G.playerName:(assignedEmp?assignedEmp.name:'employee')}</div>` : ''}
 ${!isWinter && !mowed ? `<div class="contract-actions">
 <button class="btn-mow" onclick="startMowing('${c.id}')">&#127793; Mow It</button>
 ${G.employees.length>0?`<button class="btn-assign" onclick="showAssignModal('${c.id}')">&#128100; Assign</button>`:''}
@@ -1318,12 +1433,17 @@ function showAssignModal(contractId){
 const c = G.contracts.find(c2=>String(c2.id)===String(contractId));
 let html = `<button class="modal-close" onclick="closeModal()">&times;</button><h2>Assign Employee</h2>
 <p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px">to ${c.customerName}'s ${c.label}</p>`;
-const availMowers = G.mowers.filter(m=>m.owned).length;
 G.employees.forEach(e=>{
 const alreadyAssigned = e.assignedContracts.includes(contractId);
-html += `<div class="assign-option" onclick="assignEmployee('${e.id}','${contractId}')">
-<div><div class="ao-name">${e.name}</div><div class="ao-info">${e.level} - ${fmt(e.wage)}/hr - ${e.assignedContracts.length} yards</div></div>
-${alreadyAssigned?'<span style="color:var(--success);font-weight:600">Assigned</span>':''}
+const cap = getEmpCap(e);
+const atCap = !alreadyAssigned && e.assignedContracts.length >= cap;
+const perk = getEmpPerk(e);
+html += `<div class="assign-option" ${atCap?'style="opacity:.5"':''} onclick="${atCap?`showToast('${e.name.replace(/'/g,"\\\\'")} is maxed out at ${cap} yards/week','\\u26D4')`:
+`assignEmployee('${e.id}','${contractId}')`}">
+<div><div class="ao-name">${e.name}${perk?' <span style="font-size:.65rem;color:#1a56db">'+perk.icon+' '+perk.name+'</span>':''}</div>
+<div class="ao-info">${e.level} - ${fmt(e.wage)}/hr - <span class="${atCap?'negative':''}">${e.assignedContracts.length}/${cap} yards</span></div></div>
+${alreadyAssigned?'<span style="color:var(--success);font-weight:600">Assigned</span>':
+atCap?'<span style="color:var(--danger);font-size:.72rem;font-weight:600">Maxed</span>':''}
 </div>`;
 });
 if(G.employees.length === 0) html += '<p style="color:var(--text-light);text-align:center;padding:20px">No employees hired yet</p>';
@@ -1337,6 +1457,13 @@ if(!emp) return;
 if(emp.assignedContracts.includes(contractId)){
 emp.assignedContracts = emp.assignedContracts.filter(cid=>cid!==contractId);
 } else {
+// Check cap
+const cap = getEmpCap(emp);
+if(emp.assignedContracts.length >= cap){
+closeModal();
+showToast(`${emp.name} is maxed out at ${cap} yards/week`, '\u26D4');
+return;
+}
 // Check truck assignment
 const hasTruck = getEmployeeTruck(emp.id);
 if(!hasTruck){
@@ -1549,13 +1676,18 @@ let html='';
 if(G.employees.length===0) html='<div style="padding:20px;text-align:center;color:var(--text-light)">No employees yet. Hire crew below!</div>';
 G.employees.forEach(e=>{
 const truck = getEmployeeTruck(e.id);
+const cap = getEmpCap(e);
+const atCap = e.assignedContracts.length >= cap;
+const perk = getEmpPerk(e);
+const persIcon = EMP_PERSONALITY_ICONS[e.personality]||'';
 html+=`<div class="employee-card fade-in">
 <div class="emp-header">
 <div class="emp-name">${e.name}</div>
-<span class="emp-level ${e.level.toLowerCase()}">${e.level}</span>
+<div><span class="emp-level ${e.level.toLowerCase()}">${e.level}</span><span class="emp-personality ${e.personality||'chill'}">${persIcon} ${(e.personality||'chill')}</span></div>
 </div>
 <div class="emp-wage">${fmt(e.wage)}/hr | Skill: ${Math.round((e.skill||0.7)*100)}% | Morale: ${e.morale}%</div>
-<div class="emp-assignment">${e.assignedContracts.length} yard${e.assignedContracts.length!==1?'s':''} assigned</div>
+<div class="emp-assignment"><span class="emp-cap${atCap?' full':''}">${e.assignedContracts.length}/${cap} yards assigned</span></div>
+${perk?`<div class="emp-perk">${perk.icon} ${perk.name} — ${perk.desc}</div>`:''}
 <div style="margin-top:4px">${truck
 ? `<span class="truck-badge">&#128666; ${truck.name} (${Math.round(truck.reliability*100)}%)</span>`
 : `<span class="truck-badge none">&#9888; No truck assigned</span>`}
@@ -1580,9 +1712,13 @@ if(!G._darrellsHired){G._darrellsHired=0;}
 if(G._darrellsHired<1){candidates[0].name='Darrell H Johnson';candidates[0].level='Rookie';candidates[0].wage=18;candidates[0].skill=0.6;}
 if(G._darrellsHired<2){candidates[G._darrellsHired<1?1:0].name='Darrell G Johnson';candidates[G._darrellsHired<1?1:0].level='Rookie';candidates[G._darrellsHired<1?1:0].wage=18;candidates[G._darrellsHired<1?1:0].skill=0.6;}
 candidates.forEach(e=>{
+const perk = getEmpPerk(e);
+const cap = getEmpCap(e);
+const persIcon = EMP_PERSONALITY_ICONS[e.personality]||'';
 hireHtml+=`<div class="employee-card">
-<div class="emp-header"><div class="emp-name">${e.name}</div><span class="emp-level ${e.level.toLowerCase()}">${e.level}</span></div>
-<div class="emp-wage">${fmt(e.wage)}/hr</div>
+<div class="emp-header"><div class="emp-name">${e.name}</div><div><span class="emp-level ${e.level.toLowerCase()}">${e.level}</span><span class="emp-personality ${e.personality||'chill'}">${persIcon} ${e.personality||'chill'}</span></div></div>
+<div class="emp-wage">${fmt(e.wage)}/hr | Max ${cap} yards/wk</div>
+${perk?`<div class="emp-perk">${perk.icon} ${perk.name} — ${perk.desc}</div>`:''}
 <button class="btn-hire" onclick="hireEmployee(this)" data-emp='${JSON.stringify(e)}'>Hire ${e.name}</button>
 </div>`;
 });
@@ -1700,6 +1836,9 @@ ctx.strokeStyle='#fff';ctx.lineWidth=2;
 ctx.beginPath();ctx.arc(size/2,size/2,10,0,Math.PI*2);ctx.stroke();
 ctx.fillStyle='#fff';ctx.font='bold 7px Inter';ctx.textAlign='center';
 ctx.fillText('HQ',size/2,size/2+2.5);
+// Company label near HQ
+ctx.fillStyle='#2d5a27';ctx.font='bold 6px Inter';
+ctx.fillText(G.companyName||G.playerName+"'s Lawn Care",size/2,size/2+18);
 
 // Contract pins
 G.contracts.forEach(c=>{
@@ -2667,6 +2806,7 @@ let expenses = 0;
 let gasCost = G.weekGas || 0;
 let wagesCost = 0;
 let maintenanceCost = 0;
+const empJobSummaries = []; // for week summary (declared outside winter check)
 
 if(G.season !== 'Winter'){
 // Revenue from mowed yards
@@ -2679,14 +2819,22 @@ c.loyaltyWeeks++;
 }
 });
 
-// Employee wages
+// Employee wages (with time cost factor from job duration)
 G.employees.forEach(e=>{
+const perk = getEmpPerk(e);
+const jobTime = getEmpJobTime(e); // minutes per job
+const totalTime = e.assignedContracts.length * jobTime;
+// Time factor affects wage: hours = totalTime / 60, but min 2 min/job baseline
 const hoursPerYard = e.level==='Expert'?1.5:e.level==='Experienced'?2:2.5;
 const hours = e.assignedContracts.length * hoursPerYard;
 const wage = hours * e.wage;
 wagesCost += wage;
 
-// Employee quality check + mower wear from skill
+if(e.assignedContracts.length > 0){
+empJobSummaries.push({name:e.name, yards:e.assignedContracts.length, time:totalTime, wage:wage, personality:e.personality, perk:perk});
+}
+
+// Employee quality check + mower wear from skill + perk effects
 e.assignedContracts.forEach(cid=>{
 const contract = G.contracts.find(c2=>String(c2.id)===String(cid));
 if(!contract) return;
@@ -2697,28 +2845,43 @@ else if(e.level==='Experienced') quality = rng(3,5);
 else quality = rng(2,4);
 // Morale affects quality
 if(e.morale < 50) quality = Math.max(1, quality-1);
+// Green Thumb perk: +1 star bonus
+if(perk && perk.id==='green_thumb') quality = Math.min(5, quality+1);
+// Smooth Operator perk: floor at 3
+if(perk && perk.id==='smooth_operator') quality = Math.max(3, quality);
 contract.satisfaction = clamp(Math.round((contract.satisfaction + quality)/2),1,5);
 G.totalRepJobs++;
 G.totalRepScore += quality;
 // Mower wear from employee — lower skill = more damage
 const diffMult = contract.difficulty==='hard'?1.5:contract.difficulty==='moderate'?1:0.7;
 const equipExpert = 1 - getSkillEffect('equipmentExpert');
-const mowerDmg = Math.round(10 * (1.2 - skill) * diffMult * equipExpert) / 10;
+// Duct Tape Handyman perk: 30% less mower damage
+const perkDmgMult = (perk && perk.id==='duct_tape') ? 0.7 : 1;
+const mowerDmg = Math.round(10 * (1.2 - skill) * diffMult * equipExpert * perkDmgMult) / 10;
 // Apply to the employee's assigned mower (first owned mower for now)
 const empMower = G.mowers.find(m=>m.owned && (m.health||100) > 0);
 if(empMower) empMower.health = Math.max(0, (empMower.health||100) - mowerDmg);
 });
+
+// Sales Star perk: 20% chance to bring in new contract
+if(perk && perk.id==='sales_star' && Math.random()<0.20){
+const nc = generateContract();
+G.pendingContracts.push(nc);
+G.weekEvents.push({text:`${e.name} (Sales Star) charmed a neighbor into signing up!`,type:'good'});
+}
 });
 
 // Gas for employee-mowed yards (uses route system)
 G.employees.forEach(e=>{
 const truck = getEmployeeTruck(e.id);
+const perk2 = getEmpPerk(e);
+const gasMult = (perk2 && perk2.id==='penny_pincher') ? 0.75 : 1;
 e.assignedContracts.forEach(cid=>{
 const contract = G.contracts.find(c2=>String(c2.id)===String(cid));
 if(contract){
-gasCost += calcContractGasCost(contract);
+gasCost += calcContractGasCost(contract) * gasMult;
 // Truck gas cost
-if(truck) gasCost += truck.gasCost / Math.max(1, e.assignedContracts.length);
+if(truck) gasCost += (truck.gasCost / Math.max(1, e.assignedContracts.length)) * gasMult;
 }
 });
 // Truck reliability check - may miss jobs
@@ -3036,12 +3199,12 @@ G.weekEvents.push({text:'Winter has arrived. Mowing stops, but snow plowing jobs
 }
 
 // Show summary
-showWeekSummary(revenue, seasonalRevenue, gasCost, wagesCost, maintenanceCost, insuranceCost, loanPayment, truckPay, websiteCost, adCost, net);
+showWeekSummary(revenue, seasonalRevenue, gasCost, wagesCost, maintenanceCost, insuranceCost, loanPayment, truckPay, websiteCost, adCost, net, empJobSummaries);
 saveGame();
 }
 
-function showWeekSummary(revenue, seasonalRev, gas, wages, maint, insurance, loan, truck, website, ads, net){
-$('summary-week-num').textContent = `Week ${G.week - 1} Complete`;
+function showWeekSummary(revenue, seasonalRev, gas, wages, maint, insurance, loan, truck, website, ads, net, empJobSummaries){
+$('summary-week-num').textContent = `${G.playerName}'s Week ${G.week - 1} Summary`;
 
 let html = '';
 
@@ -3064,6 +3227,23 @@ if(website > 0) html += `<div class="summary-line"><span>Website</span><span cla
 if(ads > 0) html += `<div class="summary-line"><span>Advertising</span><span class="negative">-${fmt(ads)}</span></div>`;
 html += `<div class="summary-line total"><span>Net Income</span><span class="${net>=0?'positive':'negative'}">${net>=0?'+':''}${fmt(net)}</span></div>`;
 html += `</div>`;
+
+// Employee job summaries with time and dialogue
+if(empJobSummaries && empJobSummaries.length > 0){
+html += `<div class="summary-card"><h3>Crew Report</h3>`;
+empJobSummaries.forEach(ejs=>{
+const timeStr = ejs.time >= 60 ? Math.floor(ejs.time/60)+'h '+Math.round(ejs.time%60)+'m' : Math.round(ejs.time)+' min';
+const persIcon = EMP_PERSONALITY_ICONS[ejs.personality]||'';
+const quote = EMP_DIALOGUE[ejs.personality] ? pick(EMP_DIALOGUE[ejs.personality]) : '';
+const perkLabel = ejs.perk ? `<span style="font-size:.65rem;color:#1a56db"> ${ejs.perk.icon} ${ejs.perk.name}</span>` : '';
+html += `<div style="margin-bottom:10px;padding:8px 0;border-bottom:1px solid #eee">
+<div class="summary-line"><span>${ejs.name}${perkLabel}</span><span>${fmt(ejs.wage)}</span></div>
+<div style="font-size:.78rem;color:var(--text-light);margin-top:2px">Mowed ${ejs.yards} yard${ejs.yards!==1?'s':''} (${timeStr})</div>
+${quote?`<div style="font-size:.8rem;margin-top:4px;font-style:italic;color:var(--text)">${persIcon} "${quote}"</div>`:''}
+</div>`;
+});
+html += `</div>`;
+}
 
 // Events
 if(G.weekEvents.length > 0){
